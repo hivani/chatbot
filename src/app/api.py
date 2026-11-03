@@ -44,6 +44,22 @@ def _on_vercel() -> bool:
     return bool(os.getenv("VERCEL"))
 
 
+def _configure_vercel_environment() -> None:
+    """Redirect caches to /tmp before heavy libraries are imported."""
+
+    if not _on_vercel():
+        return
+    os.environ.setdefault("HOME", "/tmp")
+    os.environ.setdefault("HF_HOME", "/tmp/huggingface")
+    os.environ.setdefault(
+        "SENTENCE_TRANSFORMERS_HOME", "/tmp/sentence-transformers"
+    )
+    os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
+
+_configure_vercel_environment()
+
+
 def _vercel_settings(settings: Settings) -> Settings:
     """Point mutable data at ``/tmp`` because Vercel's bundle is read-only."""
 
