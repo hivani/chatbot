@@ -1,0 +1,37 @@
+app:
+  name: Growchatbot
+  disclaimer: "Facts-only. No investment advice."
+  max_answer_sentences: 3
+
+paths:
+  sources: data/sources.csv
+  raw_dir: data/raw
+  chunks_file: data/chunks/chunks.jsonl
+  embeddings_dir: data/embeddings
+  artifacts_dir: artifacts
+
+embedding:
+  model: sentence-transformers/all-MiniLM-L6-v2
+  max_seq_length: 256
+  normalize: true
+  batch_size: 32
+
+chunking:
+  chunk_size: 220        # must be <= max_seq_length
+  chunk_overlap: 40
+
+vector_store:
+  persist_path: data/chroma
+  collection: groww_mf_faq
+  distance: cosine
+
+retrieval:
+  top_k: 5
+  min_score: 0.35
+
+llm:
+  provider: groq
+  model_env: GROQ_MODEL
+  temperature: 0.1
+  max_tokens: 300
+  timeout_seconds: 20

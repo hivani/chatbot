@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#F8FAF9" />
+  <meta name="description" content="Groww investment dashboard — markets, portfolio, and SIPs at a glance." />
+  <title>Groww — Investment Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='11' fill='%2300B386'/><path d='M11 27c0-8.3 6-14 15-14h3v3c0 8.3-6 14-15 14h-3v-3Z' fill='white'/><path d='M15 28c2.5-5.3 6.4-9 11.5-11.3' stroke='%2300B386' stroke-width='2.4' stroke-linecap='round'/></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="Groww home">
+        <span class="brand-symbol" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none">
+            <rect width="40" height="40" rx="12" fill="#E8FBF5"/>
+            <path d="M10.5 27.5c0-8.9 6.4-15 15.8-15h3.2v3.2c0 8.9-6.4 15-15.8 15h-3.2v-3.2Z" fill="#00B386"/>
+            <path d="M14.8 28.2c2.5-5.6 6.9-9.6 12.4-12.2" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="brand-word">groww</span>
+      </a>
+
+      <div class="search-shell" id="searchShell">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.6" stroke="currentColor" stroke-width="1.8"/>
+          <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <input
+          id="globalSearch"
+          type="search"
+          placeholder="Search stocks, mutual funds, ETFs..."
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search stocks, mutual funds, ETFs"
+          aria-controls="searchResults"
+          aria-expanded="false"
+        />
+        <kbd class="search-kbd" aria-hidden="true">⌘ K</kbd>
+
+        <div class="search-popover" id="searchPopover" hidden>
+          <div class="search-popover-head">
+            <span id="searchPopoverTitle">Trending on Groww</span>
+            <span class="search-popover-hint">↑↓ to navigate</span>
+          </div>
+          <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
+          <div class="search-footer">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 3.5 4.7 6.8v5.1c0 4.4 3 7.2 7.3 8.6 4.3-1.4 7.3-4.2 7.3-8.6V6.8L12 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="m9.1 12 1.9 1.9 3.9-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Official sources · No investment advice
+          </div>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Primary navigation">
+        <button class="nav-link is-active" data-scroll-target="top" type="button" aria-current="page">Explore</button>
+        <button class="nav-link" data-scroll-target="portfolioCard" type="button">Investments</button>
+        <button class="nav-link" data-scroll-target="sipCard" type="button">SIP Tracker</button>
+      </nav>
+
+      <div class="topbar-actions">
+        <div class="popover-anchor">
+          <button class="icon-button" id="notificationsBtn" type="button" aria-label="Notifications" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 9.7a6 6 0 1 0-12 0c0 3.4-1.1 4.7-1.8 5.6-.3.4 0 1 .5 1h14.6c.5 0 .8-.6.5-1-.7-.9-1.8-2.2-1.8-5.6Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M9.7 19.1a2.5 2.5 0 0 0 4.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+            <span class="notification-dot" aria-hidden="true"></span>
+          </button>
+          <div class="popover notifications-popover" id="notificationsPopover" hidden>
+            <div class="popover-title-row">
+              <strong>Notifications</strong>
+              <span class="soft-badge">2 new</span>
+            </div>
+            <div class="notification-item">
+              <span class="notification-icon notification-icon-green">
+                <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 6.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <div><strong>SIP payment successful</strong><span>HDFC Flexi Cap · ₹5,000 · 2h ago</span></div>
+            </div>
+            <div class="notification-item">
+              <span class="notification-icon notification-icon-violet">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 18.5V12m7 6.5V6m7 12.5v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </span>
+              <div><strong>Nifty 50 crossed 24,800</strong><span>Your portfolio is up 0.59% today</span></div>
+            </div>
+            <button class="popover-footer-link" type="button" data-toast="All notifications marked as read">Mark all as read</button>
+          </div>
+        </div>
+
+        <button class="wallet-chip" id="walletChip" type="button" aria-label="Wallet balance ₹12,450. Add funds">
+          <span class="wallet-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4.6 7.8h14.8c.6 0 1.1.5 1.1 1.1v9.2c0 .6-.5 1.1-1.1 1.1H4.6c-.6 0-1.1-.5-1.1-1.1V6.4c0-.9.8-1.7 1.7-1.7h11.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M20.5 11.2h-4.2a2.1 2.1 0 0 0 0 4.2h4.2v-4.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <circle cx="16.6" cy="13.3" r=".9" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="wallet-copy"><span>Wallet</span><strong>₹12,450</strong></span>
+          <span class="wallet-add" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 4.5v11M4.5 10h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </span>
+        </button>
+
+        <div class="popover-anchor profile-anchor">
+          <button class="profile-button" id="profileBtn" type="button" aria-label="Open profile menu" aria-expanded="false">
+            <span class="avatar">SR<span class="online-dot" aria-hidden="true"></span></span>
+            <span class="profile-name">Shivani</span>
+            <svg class="chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="popover profile-popover" id="profilePopover" hidden>
+            <div class="profile-popover-head">
+              <span class="avatar avatar-large">SR<span class="online-dot"></span></span>
+              <div><strong>Shivani Reddy</strong><span>shivani@example.com</span></div>
+            </div>
+            <button type="button" data-toast="Account settings opened">Account settings</button>
+            <button type="button" data-toast="Your reports are ready to download">Reports & statements</button>
+            <button type="button" data-toast="Help centre opened">Help centre</button>
+            <div class="profile-popover-sep"></div>
+            <button class="signout" type="button" data-toast="This is a demo account">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell" id="mainContent">
+    <section class="page-intro" aria-labelledby="pageTitle">
+      <div class="intro-copy">
+        <div class="market-state">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Markets open</span>
+          <span class="state-divider" aria-hidden="true"></span>
+          <span class="state-date">Wed, 3 Nov 2026</span>
+        </div>
+        <h1 id="pageTitle">Good morning, Shivani</h1>
+        <p>Your portfolio is up <span class="positive-text">0.59%</span> today. Here's the market at a glance.</p>
+      </div>
+      <div class="intro-actions">
+        <button class="button button-secondary" type="button" data-toast="Statement download started">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v10m0 0 3.6-3.6M12 14l-3.6-3.6M5 16.5v2.1c0 .8.6 1.4 1.4 1.4h11.2c.8 0 1.4-.6 1.4-1.4v-2.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Statement
+        </button>
+        <button class="button button-primary" type="button" data-toast="Add funds flow opened">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          Add funds
+        </button>
+      </div>
+    </section>
+
+    <section class="indices-ribbon" aria-label="Market indices">
+      <article class="index-item">
+        <div class="index-copy">
+          <div class="index-label">NIFTY 50 <span class="exchange-tag">NSE</span></div>
+          <div class="index-value">24,812.30</div>
+          <div class="index-change positive-text">
+            <span class="change-arrow">↑</span> 1.24%
+            <span class="change-points">+304.15</span>
+          </div>
+        </div>
+        <svg class="sparkline" id="sparkNifty" viewBox="0 0 112 42" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </article>
+
+      <article class="index-item">
+        <div class="index-copy">
+          <div class="index-label">SENSEX <span class="exchange-tag">BSE</span></div>
+          <div class="index-value">81,420.65</div>
+          <div class="index-change positive-text">
+            <span class="change-arrow">↑</span> 0.86%
+            <span class="change-points">+694.82</span>
+          </div>
+        </div>
+        <svg class="sparkline" id="sparkSensex" viewBox="0 0 112 42" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </article>
+
+      <article class="index-item">
+        <div class="index-copy">
+          <div class="index-label">NASDAQ <span class="exchange-tag">US</span></div>
+          <div class="index-value">18,938.20</div>
+          <div class="index-change negative-text">
+            <span class="change-arrow">↓</span> 0.42%
+            <span class="change-points">−79.64</span>
+          </div>
+        </div>
+        <svg class="sparkline sparkline-negative" id="sparkNasdaq" viewBox="0 0 112 42" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </article>
+
+      <article class="index-item market-status-card">
+        <div class="status-orb" aria-hidden="true">
+          <span></span>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 16.2 9.2 12l3 3L19 8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8H19v3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="market-status-copy">
+          <div class="index-label">Market status</div>
+          <div class="market-open"><span class="status-dot" aria-hidden="true"></span>Open</div>
+          <div class="market-close">Closes in 4h 12m</div>
+        </div>
+      </article>
+    </section>
+
+    <div class="workspace-grid">
+      <div class="primary-column">
+        <section class="card market-card" aria-labelledby="marketHeading">
+          <div class="card-heading-row market-card-head">
+            <div>
+              <span class="section-eyebrow">Markets</span>
+              <h2 id="marketHeading">Discover</h2>
+            </div>
+            <div class="market-tabs" role="tablist" aria-label="Market categories">
+              <button class="market-tab is-active" type="button" role="tab" aria-selected="true" data-market-tab="stocks">Stocks</button>
+              <button class="market-tab" type="button" role="tab" aria-selected="false" data-market-tab="mutualFunds">Mutual Funds</button>
+              <button class="market-tab" type="button" role="tab" aria-selected="false" data-market-tab="fixedDeposits">Fixed Deposits</button>
+            </div>
+          </div>
+
+          <div class="market-panels" id="marketPanels"></div>
+        </section>
+
+        <section class="card portfolio-card" id="portfolioCard" aria-labelledby="portfolioHeading">
+          <div class="portfolio-head">
+            <div class="portfolio-summary">
+              <div class="portfolio-kicker">
+                <span id="portfolioHeading">Portfolio value</span>
+                <span class="live-badge"><span aria-hidden="true"></span>Live</span>
+              </div>
+              <div class="portfolio-value-row">
+                <h2 id="portfolioValue">₹3,12,480</h2>
+                <span class="return-pill positive" id="periodReturnPill">+13.65%</span>
+              </div>
+              <p class="portfolio-subline" id="portfolioSubline">
+                <span class="positive-text" id="periodReturnAmount">+₹37,630</span>
+                <span id="periodReturnCopy">returns in the last year</span>
+                <span class="meta-dot" aria-hidden="true">·</span>
+                Invested <strong>₹2,74,850</strong>
+              </p>
+            </div>
+            <div class="timeline-tabs" role="tablist" aria-label="Portfolio chart period">
+              <button class="timeline-tab" type="button" role="tab" aria-selected="false" data-period="1D">1D</button>
+              <button class="timeline-tab" type="button" role="tab" aria-selected="false" data-period="1W">1W</button>
+              <button class="timeline-tab" type="button" role="tab" aria-selected="false" data-period="1M">1M</button>
+              <button class="timeline-tab is-active" type="button" role="tab" aria-selected="true" data-period="1Y">1Y</button>
+              <button class="timeline-tab" type="button" role="tab" aria-selected="false" data-period="ALL">ALL</button>
+            </div>
+          </div>
+
+          <div class="chart-wrap" id="chartWrap">
+            <svg id="portfolioChart" role="img" aria-label="Portfolio value chart"></svg>
+            <div class="chart-tooltip" id="chartTooltip" hidden>
+              <span id="chartTooltipDate"></span>
+              <strong id="chartTooltipValue"></strong>
+            </div>
+          </div>
+
+          <div class="portfolio-footer">
+            <div class="chart-legend"><span class="legend-dot" aria-hidden="true"></span>Portfolio value</div>
+            <div class="chart-meta">
+              <span>Updated just now</span>
+              <button class="refresh-button" type="button" id="refreshChart" aria-label="Refresh portfolio chart">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 8.2A7.8 7.8 0 1 0 19.6 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M19.3 4.8v4h-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="sidebar" aria-label="Trading and SIP shortcuts">
+        <section class="card order-card" id="orderCard" aria-labelledby="orderHeading">
+          <div class="order-head">
+            <div>
+              <span class="section-eyebrow">Orders</span>
+              <h2 id="orderHeading">Quick invest</h2>
+            </div>
+            <span class="zero-brokerage">₹0 brokerage</span>
+          </div>
+
+          <div class="segmented trade-side" role="tablist" aria-label="Trade side">
+            <button class="segment is-active" type="button" role="tab" aria-selected="true" data-side="buy">Buy</button>
+            <button class="segment" type="button" role="tab" aria-selected="false" data-side="sell">Sell</button>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="stockPicker">Instrument</label>
+            <div class="stock-picker-wrap">
+              <button class="stock-picker" id="stockPicker" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="stockMenu">
+                <span class="company-logo logo-reliance" id="selectedLogo" aria-hidden="true">R</span>
+                <span class="picker-copy">
+                  <strong id="selectedTicker">RELIANCE</strong>
+                  <span id="selectedName">Reliance Industries</span>
+                </span>
+                <span class="picker-price">
+                  <span id="selectedPrice">₹2,986.40</span>
+                  <span class="positive-text" id="selectedChange">+1.86%</span>
+                </span>
+                <svg class="chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="stock-menu" id="stockMenu" role="listbox" aria-label="Choose an instrument" hidden></div>
+            </div>
+          </div>
+
+          <div class="order-mode-row">
+            <div class="segmented mode-segment" role="tablist" aria-label="Order duration">
+              <button class="mode-tab is-active" type="button" role="tab" aria-selected="true" data-mode="intraday">Intraday</button>
+              <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="longterm">Long term</button>
+            </div>
+            <span class="product-badge" id="productBadge">MIS</span>
+          </div>
+
+          <div class="order-inputs">
+            <div class="field-group">
+              <label class="field-label" for="limitPrice">Limit price</label>
+              <div class="input-shell">
+                <span class="input-prefix">₹</span>
+                <input id="limitPrice" type="number" value="2986.40" min="0.05" step="0.05" inputmode="decimal" />
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="quantity">Quantity</label>
+              <div class="input-shell">
+                <input id="quantity" type="number" value="10" min="1" step="1" inputmode="numeric" />
+                <span class="input-suffix">Qty</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-summary">
+            <div class="order-summary-row">
+              <span>Estimated amount</span>
+              <strong id="estimatedAmount">₹29,864.00</strong>
+            </div>
+            <div class="order-summary-row order-summary-muted">
+              <span>Available margin</span>
+              <span>₹1,24,580</span>
+            </div>
+          </div>
+
+          <button class="place-order-button" id="placeOrder" type="button">
+            <span id="placeOrderLabel">Buy RELIANCE</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13m0 0-4.6-4.6M18 12l-4.6 4.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="order-note">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5.6" y="10.3" width="12.8" height="9.2" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8.7 10.3V8a3.3 3.3 0 1 1 6.6 0v2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <span>Simulated order · No real money involved</span>
+          </div>
+        </section>
+
+        <section class="card sip-card" id="sipCard" aria-labelledby="sipHeading">
+          <div class="sip-head">
+            <div>
+              <span class="section-eyebrow">Scheduled</span>
+              <h2 id="sipHeading">Upcoming SIPs</h2>
+            </div>
+            <button class="text-link" id="manageSips" type="button">Manage</button>
+          </div>
+
+          <div class="sip-summary">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4.2" y="5.8" width="15.6" height="14" rx="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M8 3.9v3.5M16 3.9v3.5M4.2 10h15.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="m9.2 14.7 1.7 1.7 3.7-3.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="sipSummaryText"><strong>2 auto-debits</strong> · ₹7,500 due this week</span>
+          </div>
+
+          <div class="sip-list">
+            <div class="sip-item" data-amount="5000" data-day="05">
+              <div class="sip-date"><span>NOV</span><strong>05</strong></div>
+              <div class="sip-info"><strong>HDFC Flexi Cap Fund</strong><span>₹5,000 · <span class="auto-status">Auto-debit on</span></span></div>
+              <label class="switch"><input type="checkbox" checked aria-label="Toggle auto-debit for HDFC Flexi Cap Fund" /><span class="switch-track"></span></label>
+            </div>
+            <div class="sip-item" data-amount="2500" data-day="07">
+              <div class="sip-date"><span>NOV</span><strong>07</strong></div>
+              <div class="sip-info"><strong>HDFC ELSS Tax Saver</strong><span>₹2,500 · <span class="auto-status">Auto-debit on</span></span></div>
+              <label class="switch"><input type="checkbox" checked aria-label="Toggle auto-debit for HDFC ELSS Tax Saver" /><span class="switch-track"></span></label>
+            </div>
+            <div class="sip-item" data-amount="3000" data-day="10">
+              <div class="sip-date"><span>NOV</span><strong>10</strong></div>
+              <div class="sip-info"><strong>Nifty 50 Index Fund</strong><span>₹3,000 · <span class="auto-status is-paused">Auto-debit paused</span></span></div>
+              <label class="switch"><input type="checkbox" aria-label="Toggle auto-debit for Nifty 50 Index Fund" /><span class="switch-track"></span></label>
+            </div>
+          </div>
+
+          <button class="sip-footer" type="button" data-toast="UPI AutoPay mandate is active">
+            <span class="sip-footer-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.8 4.8 7v5c0 4.2 2.8 7 7.2 8.3 4.4-1.3 7.2-4.1 7.2-8.3V7L12 3.8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m9.2 12 1.9 1.9 3.9-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span>UPI AutoPay mandate active</span>
+            <svg class="sip-footer-arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7.5 4.5 5 5.5-5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 6.9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span id="toastText"></span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
