@@ -9,15 +9,8 @@ __pycache__/
 # Secrets
 .env
 
-# Generated corpus data
-data/raw/*
-!data/raw/.gitkeep
-data/chunks/*
-!data/chunks/.gitkeep
-data/embeddings/*
-!data/embeddings/.gitkeep
-data/chroma/*
-!data/chroma/.gitkeep
+# Corpus data is committed so Vercel can deploy the retrieval index.
+# Rebuild it locally with: python -m src.ingest.pipeline --stage all --rebuild
 
 # Generated query artifacts
 artifacts/*

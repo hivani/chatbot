@@ -1,0 +1,225 @@
+{
+  "started_at": "2026-11-02T07:03:12Z",
+  "finished_at": "2026-11-02T07:03:24Z",
+  "sources_file": "/Users/shivanireddy/Desktop/Growchatbot/data/sources.csv",
+  "raw_dir": "/Users/shivanireddy/Desktop/Growchatbot/data/raw",
+  "total": 21,
+  "succeeded": 21,
+  "failed": 0,
+  "minimum_required": 15,
+  "status": "success",
+  "source_list_hash": "sha256:028757562c22b8ecd8395fd40051bf8eba5546219f0b22361515b6f738dad9e9",
+  "links_followed": 0,
+  "results": [
+    {
+      "doc_id": "hdfc-large-cap",
+      "url": "https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-large-cap.json",
+      "content_hash": "sha256:95676828d877bd17c0fe211c20290a1de4449a23d64922d77df950e0947542ad",
+      "blocks": 18,
+      "text_chars": 2313
+    },
+    {
+      "doc_id": "hdfc-flexi-cap",
+      "url": "https://groww.in/mutual-funds/hdfc-equity-fund-direct-growth",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-flexi-cap.json",
+      "content_hash": "sha256:b452e84ff61f8b641a0534a6dbbafcb4e554ec77fd7309bb4843f2a0224364db",
+      "blocks": 18,
+      "text_chars": 2331
+    },
+    {
+      "doc_id": "hdfc-elss",
+      "url": "https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-elss.json",
+      "content_hash": "sha256:8a83523d7f25df103223ce0e39d7594807779874cca72d7aa507539fd3d3636f",
+      "blocks": 16,
+      "text_chars": 1897
+    },
+    {
+      "doc_id": "hdfc-mid-cap",
+      "url": "https://groww.in/mutual-funds/hdfc-mid-cap-fund-direct-growth",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-mid-cap.json",
+      "content_hash": "sha256:796b09b002b76de897293435372c121b420f02bff20d99dcf8ae1cbcf04e92c1",
+      "blocks": 18,
+      "text_chars": 2303
+    },
+    {
+      "doc_id": "hdfc-amc",
+      "url": "https://groww.in/mutual-funds/amc/hdfc-mutual-funds",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-amc.json",
+      "content_hash": "sha256:954f76e36cb15bd80de8898795c2bf08e2e67f9dcfe0ee998979b71ca773bacc",
+      "blocks": 64,
+      "text_chars": 12277
+    },
+    {
+      "doc_id": "mf-expenses",
+      "url": "https://www.mutualfundssahihai.com/en/what-are-expenses-incurred-mutual-fund-scheme",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-expenses.json",
+      "content_hash": "sha256:6e1ca1769e813a6ce14b1bb57d6c286c524a0e5ad0d90318312646042b675da7",
+      "blocks": 7,
+      "text_chars": 966
+    },
+    {
+      "doc_id": "mf-loads",
+      "url": "https://www.mutualfundssahihai.com/en/what-are-loads",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-loads.json",
+      "content_hash": "sha256:563886d7adbff3304576a661c51923ed9e4d722bf8f48557293903ce1ab6d023",
+      "blocks": 7,
+      "text_chars": 1193
+    },
+    {
+      "doc_id": "mf-exit-load-advantage",
+      "url": "https://www.mutualfundssahihai.com/en/there-advantage-investing-funds-exit-load",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-exit-load-advantage.json",
+      "content_hash": "sha256:462a563db0485937865a9b2b31165c8023d4e3d799a3cfb31ddd6f96d46eb7d2",
+      "blocks": 7,
+      "text_chars": 1270
+    },
+    {
+      "doc_id": "mf-redemption-costs",
+      "url": "https://www.mutualfundssahihai.com/en/what-costs-does-one-incur-while-redeeming-mutual-fund-units",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-redemption-costs.json",
+      "content_hash": "sha256:27a3cad8fa66e235d9f924d42fbe0b72ceeb56432ae49272ae5b8ed956028272",
+      "blocks": 7,
+      "text_chars": 1401
+    },
+    {
+      "doc_id": "mf-elss",
+      "url": "https://www.mutualfundssahihai.com/en/elss-fund-tax-saving-mutual-fund",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-elss.json",
+      "content_hash": "sha256:73b1987dffe7333ae95b1c3a0010e9810c8f0a7db7c46b797a3f35d1a05ab67b",
+      "blocks": 7,
+      "text_chars": 786
+    },
+    {
+      "doc_id": "mf-elss-advantages",
+      "url": "https://www.mutualfundssahihai.com/en/advantages-of-elss-funds",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-elss-advantages.json",
+      "content_hash": "sha256:265d77c4bd45315f569a8c48480044d8ab686d2d33e4986aa7989d7b8a226054",
+      "blocks": 7,
+      "text_chars": 1373
+    },
+    {
+      "doc_id": "mf-lock-in",
+      "url": "https://www.mutualfundssahihai.com/en/what-is-lock-in-period",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-lock-in.json",
+      "content_hash": "sha256:92b087f18ddff4c47e81bca98170f089ce693a0cd9803161f0017f9302e3a0d7",
+      "blocks": 14,
+      "text_chars": 2457
+    },
+    {
+      "doc_id": "mf-riskometer",
+      "url": "https://www.mutualfundssahihai.com/en/what-riskometer-and-what-are-different-levels",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-riskometer.json",
+      "content_hash": "sha256:cdaa80ffc12f0facad2473268573655c314ddf1d9500aca6b48a88d96761e9e0",
+      "blocks": 14,
+      "text_chars": 1858
+    },
+    {
+      "doc_id": "mf-riskometer-derived",
+      "url": "https://www.mutualfundssahihai.com/en/how-riskometer-scheme-derived",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-riskometer-derived.json",
+      "content_hash": "sha256:4943f47e895bbfb5090439db2bd5da10d54993dabb9ad8b5e295c92a77b34c82",
+      "blocks": 17,
+      "text_chars": 3098
+    },
+    {
+      "doc_id": "mf-capital-gain-statement",
+      "url": "https://www.mutualfundssahihai.com/en/how-get-capital-gain-statement-mutual-funds",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-capital-gain-statement.json",
+      "content_hash": "sha256:5ab5d7aee093b2ee140899bdee7daf88558122970c747ebc90b6fb1850f06be5",
+      "blocks": 40,
+      "text_chars": 2695
+    },
+    {
+      "doc_id": "mf-cas",
+      "url": "https://www.mutualfundssahihai.com/en/what-cas-consolidated-account-statement",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-cas.json",
+      "content_hash": "sha256:ea6984b4800bdc07ad22254841a7f961cd3c8a6d2a659c18d71d3f2cb2311fdb",
+      "blocks": 7,
+      "text_chars": 1479
+    },
+    {
+      "doc_id": "mf-sip",
+      "url": "https://www.mutualfundssahihai.com/en/what-is-sip",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-sip.json",
+      "content_hash": "sha256:de2dfd8a1842ab95d2652a775cbdf3dd16ddbe7341062a9a8ed59c402195d24c",
+      "blocks": 7,
+      "text_chars": 1058
+    },
+    {
+      "doc_id": "mf-taxation",
+      "url": "https://www.mutualfundssahihai.com/en/what-are-the-taxation-rules-and-implications-in-mutual-fund",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-taxation.json",
+      "content_hash": "sha256:5dd839ebfde9b78c9cbeeb919c793bb49a6de5a7dc9e7e795918a11622a95524",
+      "blocks": 7,
+      "text_chars": 1404
+    },
+    {
+      "doc_id": "mf-tenure",
+      "url": "https://www.mutualfundssahihai.com/en/what-minimum-and-maximum-tenure-i-can-invest-mutual-funds",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-tenure.json",
+      "content_hash": "sha256:ad4296972fe28de1b1b8ba5bd5def15fc727b5d2ed799f6ce69b8c6f097fb5ca",
+      "blocks": 6,
+      "text_chars": 873
+    },
+    {
+      "doc_id": "mf-early-withdrawal-penalties",
+      "url": "https://www.mutualfundssahihai.com/en/are-there-penalties-if-i-choose-withdraw-earlier",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-early-withdrawal-penalties.json",
+      "content_hash": "sha256:5589633426aa62d8afb75edb49191073e639a0ac0299b997cdc09762381bf5a6",
+      "blocks": 7,
+      "text_chars": 862
+    },
+    {
+      "doc_id": "mf-withdrawal-timeline",
+      "url": "https://www.mutualfundssahihai.com/en/how-soon-can-i-withdraw-my-money-mutual-funds",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/mf-withdrawal-timeline.json",
+      "content_hash": "sha256:1ce47757f507f66a1afd0d02ec8e910b72f25a26d85dfd813742170a497f6211",
+      "blocks": 7,
+      "text_chars": 1225
+    }
+  ]
+}

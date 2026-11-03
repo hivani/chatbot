@@ -1,0 +1,49 @@
+{
+  "doc_id": "mf-loads",
+  "url": "https://www.mutualfundssahihai.com/en/what-are-loads",
+  "title": "What are loads?",
+  "category": "education",
+  "scraped_at": "2026-11-02T07:03:18Z",
+  "http_status": 200,
+  "content_type": "education_page",
+  "blocks": [
+    {
+      "kind": "heading",
+      "level": 1,
+      "text": "What are loads?"
+    },
+    {
+      "kind": "paragraph",
+      "text": "More about Mutual Funds"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Types of Mutual Funds"
+    },
+    {
+      "kind": "paragraph",
+      "text": "51 seconds read"
+    },
+    {
+      "kind": "paragraph",
+      "text": "On a long-distance road journey, sometimes a toll is charged when you enter the road or the bridge, and sometimes when you exit. In many cases, the toll bridge company is allowed to charge the toll only for a certain number of years to recover the building costs. After that period is over, the company is not allowed to charge the passengers any toll."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Investment in Mutual Funds also may be subject to some loads, but they’re different from the example of the tolls you just read. Until 2009, there used to be a charge levied at the time of entry into a Mutual Fund, but that doesn’t exist anymore. Some schemes levy a charge on exiting the scheme, under certain conditions, which is called “exit load”."
+    },
+    {
+      "kind": "paragraph",
+      "text": "In most cases, even when an exit load is charged, it applies to exit within a certain period. If you stay invested longer than this period, no exit load would be applicable. In other words, most often, the exit load serves the purpose of discouraging an early exit from a scheme. Even on an “exit load”, SEBI , the mutual fund regulatory authority, has set a limit on the maximum exit load that can be charged."
+    }
+  ],
+  "text": "What are loads?\nMore about Mutual Funds\nTypes of Mutual Funds\n51 seconds read\nOn a long-distance road journey, sometimes a toll is charged when you enter the road or the bridge, and sometimes when you exit. In many cases, the toll bridge company is allowed to charge the toll only for a certain number of years to recover the building costs. After that period is over, the company is not allowed to charge the passengers any toll.\nInvestment in Mutual Funds also may be subject to some loads, but they’re different from the example of the tolls you just read. Until 2009, there used to be a charge levied at the time of entry into a Mutual Fund, but that doesn’t exist anymore. Some schemes levy a charge on exiting the scheme, under certain conditions, which is called “exit load”.\nIn most cases, even when an exit load is charged, it applies to exit within a certain period. If you stay invested longer than this period, no exit load would be applicable. In other words, most often, the exit load serves the purpose of discouraging an early exit from a scheme. Even on an “exit load”, SEBI , the mutual fund regulatory authority, has set a limit on the maximum exit load that can be charged.",
+  "content_hash": "sha256:563886d7adbff3304576a661c51923ed9e4d722bf8f48557293903ce1ab6d023",
+  "aliases": [
+    "load",
+    "entry load",
+    "exit load"
+  ],
+  "notes": "AMFI investor education",
+  "page_title": "What is Exit Load in Mutual Fund | Mutual Funds Sahi Hai"
+}

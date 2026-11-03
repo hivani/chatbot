@@ -1,0 +1,50 @@
+{
+  "doc_id": "mf-taxation",
+  "url": "https://www.mutualfundssahihai.com/en/what-are-the-taxation-rules-and-implications-in-mutual-fund",
+  "title": "What are the taxation rules and implications in Mutual Funds?",
+  "category": "education",
+  "scraped_at": "2026-11-02T07:03:23Z",
+  "http_status": 200,
+  "content_type": "education_page",
+  "blocks": [
+    {
+      "kind": "heading",
+      "level": 1,
+      "text": "What are the taxation rules and implications in Mutual Funds?"
+    },
+    {
+      "kind": "paragraph",
+      "text": "New to Mutual Funds"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Withdrawing from Mutual Funds"
+    },
+    {
+      "kind": "paragraph",
+      "text": "55 seconds read"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Mutual Fund investments are subject to capital gains tax. It’s paid on the profit we make while redeeming / selling our Mutual Fund holdings (units). The gain is the difference in Net Asset Value (NAV) of scheme on the date of sale and date of purchase (Selling Price-Purchase Price). Capital gains tax is further classified depending on period of holding. For equity funds (funds with equity exposure > =65%), holding period of one year or more is considered long-term and subjected to Long-Term Capital Gains (LTCG) tax."
+    },
+    {
+      "kind": "paragraph",
+      "text": "LTCG tax of 10% is applicable on equity funds if the cumulative capital gain in a financial year exceeds INR 1 lakh. While doing financial planning remember your gains remain tax-free up to INR 1 lakh. It’s applicable for all investments made after 31st Jan 2018. Profits on holdings of less than a year are subject to 15% Short-Term Capital Gains (STCG) tax in equity funds."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Long-term is defined as holding period of 3 years or more in case of non-equity funds ( debt funds ) and 20% LTCG tax is applicable on such holdings with indexation i.e. purchase price is adjusted upwards for inflation , while computing capital gains. Profits on holdings of less than 3 years are subject to STCG tax, which is the highest income tax slab individuals fall into."
+    }
+  ],
+  "text": "What are the taxation rules and implications in Mutual Funds?\nNew to Mutual Funds\nWithdrawing from Mutual Funds\n55 seconds read\nMutual Fund investments are subject to capital gains tax. It’s paid on the profit we make while redeeming / selling our Mutual Fund holdings (units). The gain is the difference in Net Asset Value (NAV) of scheme on the date of sale and date of purchase (Selling Price-Purchase Price). Capital gains tax is further classified depending on period of holding. For equity funds (funds with equity exposure > =65%), holding period of one year or more is considered long-term and subjected to Long-Term Capital Gains (LTCG) tax.\nLTCG tax of 10% is applicable on equity funds if the cumulative capital gain in a financial year exceeds INR 1 lakh. While doing financial planning remember your gains remain tax-free up to INR 1 lakh. It’s applicable for all investments made after 31st Jan 2018. Profits on holdings of less than a year are subject to 15% Short-Term Capital Gains (STCG) tax in equity funds.\nLong-term is defined as holding period of 3 years or more in case of non-equity funds ( debt funds ) and 20% LTCG tax is applicable on such holdings with indexation i.e. purchase price is adjusted upwards for inflation , while computing capital gains. Profits on holdings of less than 3 years are subject to STCG tax, which is the highest income tax slab individuals fall into.",
+  "content_hash": "sha256:5dd839ebfde9b78c9cbeeb919c793bb49a6de5a7dc9e7e795918a11622a95524",
+  "aliases": [
+    "tax",
+    "taxation",
+    "LTCG",
+    "STCG"
+  ],
+  "notes": "AMFI investor education",
+  "page_title": "Mutual Fund Taxation | How Mutual Funds Are Taxed in India?"
+}
