@@ -1,3 +1,9 @@
+# Local / development dependencies (Streamlit + the full vector stack).
+# Vercel installs [project.dependencies] from pyproject.toml instead, which
+# excludes torch/transformers/Chroma so the function stays under the bundle
+# limit. For a fresh local install prefer:
+#     pip install -e ".[local]"
+#
 # Python 3.11 or 3.12 recommended. Some ML dependencies may lag on newer versions.
 streamlit>=1.36
 fastapi>=0.111

@@ -12,14 +12,27 @@ and artifacts are orchestrated later. The output contract mirrors the
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence
 
 from src.config import Settings, load_settings
 from src.ingest.loader import SourceSpec, load_sources
-from src.rag.embedder import SentenceTransformerEmbedder, embed_query
-from src.rag.store import ChromaStore
+
+
+def _lexical_mode() -> bool:
+    """Use BM25 when the vector stack is unavailable or too large to ship.
+
+    Vercel's Python bundle cannot hold torch + transformers, so functions set
+    ``VERCEL=1`` and fall back to the committed chunk file. Local, Streamlit,
+    and CLI runs keep using Chroma unless explicitly overridden.
+    """
+
+    if os.getenv("GROWCHAT_RETRIEVER", "").strip().casefold() == "lexical":
+        return True
+    return bool(os.getenv("VERCEL"))
+
 
 # Fact types named in the phase 7 sufficiency rules. Each type is matched in
 # both the question and the retrieved chunk text.
@@ -455,15 +468,29 @@ class Retriever:
         sources: Sequence[SourceSpec] | None = None,
     ):
         self.settings = settings or load_settings()
-        self.embedder = embedder or SentenceTransformerEmbedder(
-            self.settings.embedding.model,
-            max_seq_length=self.settings.embedding.max_seq_length,
-        )
-        self.store = store or ChromaStore(
-            self.settings.vector_store.persist_path,
-            self.settings.vector_store.collection,
-            distance=self.settings.vector_store.distance,
-        )
+        # Injected stores/embedders mean a test or caller already chose the
+        # vector path; never override them with the serverless fallback.
+        self.lexical = store is None and embedder is None and _lexical_mode()
+
+        if self.lexical:
+            from src.rag.lexical import LexicalIndex
+
+            self.embedder = None
+            self.store = LexicalIndex(self.settings.paths.chunks_file)
+        else:
+            from src.rag.embedder import SentenceTransformerEmbedder
+            from src.rag.store import ChromaStore
+
+            self.embedder = embedder or SentenceTransformerEmbedder(
+                self.settings.embedding.model,
+                max_seq_length=self.settings.embedding.max_seq_length,
+            )
+            self.store = store or ChromaStore(
+                self.settings.vector_store.persist_path,
+                self.settings.vector_store.collection,
+                distance=self.settings.vector_store.distance,
+            )
+
         self.sources = (
             list(sources)
             if sources is not None
@@ -492,18 +519,26 @@ class Retriever:
         if not 0.0 <= threshold <= 1.0:
             raise RetrievalError("min_score must be between 0.0 and 1.0")
 
-        query_vector = embed_query(
-            cleaned,
-            self.embedder,
-            normalize=self.settings.embedding.normalize,
-        )
-        hits = list(self.store.search(query_vector, top_k=limit))
-
-        # Vector search is the primary path. When the question names a fact,
-        # a filtered query in the same collection ensures a compact fact row
-        # (e.g. "Exit load | Nil") is not crowded out by long prose chunks.
         fact_types = detect_fact_types(cleaned)
         fact_regex = _fact_search_regex(fact_types)
+
+        if self.lexical:
+            hits = list(self.store.search(cleaned, top_k=limit))
+            fact_query: Any = cleaned
+        else:
+            from src.rag.embedder import embed_query
+
+            query_vector = embed_query(
+                cleaned,
+                self.embedder,
+                normalize=self.settings.embedding.normalize,
+            )
+            hits = list(self.store.search(query_vector, top_k=limit))
+            fact_query = query_vector
+
+        # When the question names a fact, a filtered query in the same index
+        # ensures a compact fact row (e.g. "Exit load | Nil") is not crowded
+        # out by long prose chunks.
         if fact_regex and hasattr(self.store, "search_facts"):
             scheme_ids = detect_schemes(cleaned, self.sources)
             supplements: list[Mapping[str, Any]] = []
@@ -511,7 +546,7 @@ class Retriever:
                 for scheme_id in scheme_ids:
                     supplements.extend(
                         self.store.search_facts(
-                            query_vector,
+                            fact_query,
                             regex=fact_regex,
                             doc_id=scheme_id,
                             top_k=limit,
@@ -520,7 +555,7 @@ class Retriever:
             else:
                 supplements.extend(
                     self.store.search_facts(
-                        query_vector,
+                        fact_query,
                         regex=fact_regex,
                         top_k=limit,
                     )
@@ -554,7 +589,9 @@ class Retriever:
 
         return RetrievalResult(
             question=cleaned,
-            embedding_model=self.embedder.model_name,
+            embedding_model=(
+                "lexical-bm25" if self.lexical else self.embedder.model_name
+            ),
             collection=getattr(
                 self.store, "collection_name", self.settings.vector_store.collection
             ),

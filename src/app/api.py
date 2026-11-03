@@ -9,7 +9,7 @@ Endpoints:
 
 * ``GET /`` — the static Stitch UI
 * ``POST /query`` — body ``{"query": "..."}`` → answer envelope
-* ``GET /health`` — liveness, Chroma count, embedding model, provider
+* ``GET /health`` — liveness, index count, retriever, embedding model, provider
 * ``GET /artifacts/{query_id}`` — six stage artifacts for the inspector
 
 The heavy RAG stack is imported lazily so the function can boot on Vercel and
@@ -176,11 +176,17 @@ def create_app(orchestrator: QueryOrchestrator | None = None) -> FastAPI:
             }
 
         settings = _settings()
+        retriever = getattr(instance, "retriever", None)
+        lexical = bool(getattr(retriever, "lexical", False))
         return {
             "status": "ok" if count > 0 else "not_ready",
             "chroma_count": count,
+            "index_count": count,
+            "retriever": "lexical-bm25" if lexical else "vector",
             "collection": settings.vector_store.collection,
-            "embedding_model": settings.embedding.model,
+            "embedding_model": (
+                "lexical-bm25" if lexical else settings.embedding.model
+            ),
             "generator_provider": getattr(instance.generator, "provider", "unknown"),
         }
 

@@ -1,7 +1,35 @@
 [project]
 name = "growchatbot"
 version = "1.0.0"
+description = "Grounded mutual-fund FAQ assistant with guardrails and RAG artifacts."
 requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Runtime dependencies installed by Vercel. Keep this list small: the
+    # Python function bundle is capped at 500 MB, so torch/Chroma must not be
+    # included here. The API uses the BM25 retriever on Vercel.
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "PyYAML>=6.0",
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "groq>=0.9",
+    "requests>=2.32",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.2",
+]
+
+[project.optional-dependencies]
+# Local, Streamlit, CLI, and ingestion stack. Install with:
+#     pip install -e ".[local]"
+# Vercel does not install optional dependencies.
+local = [
+    "streamlit>=1.36",
+    "chromadb==1.5.9",
+    "sentence-transformers>=3.0",
+    "numpy>=1.26",
+    "pytest>=8.2",
+    "httpx>=0.27",
+]
 
 [tool.vercel]
 entrypoint = "app:app"
