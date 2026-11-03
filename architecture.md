@@ -672,7 +672,7 @@ This directly satisfies the success criterion that a reviewer can inspect **load
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-local.txt
 cp .env.example .env          # add GROQ_API_KEY and GROQ_MODEL
 python -m src.ingest.pipeline # load → chunk → embed → upsert
 streamlit run src/app/streamlit_app.py

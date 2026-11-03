@@ -1,22 +1,19 @@
-# Local / development dependencies (Streamlit + the full vector stack).
-# Vercel installs [project.dependencies] from pyproject.toml instead, which
-# excludes torch/transformers/Chroma so the function stays under the bundle
-# limit. For a fresh local install prefer:
-#     pip install -e ".[local]"
+# Runtime dependencies installed by Vercel (must match [project.dependencies]
+# in pyproject.toml). Keep this file small: the Python function bundle is
+# capped at 500 MB, so torch/Chroma/sentence-transformers are deliberately
+# excluded. The API uses the BM25 retriever on Vercel.
 #
-# Python 3.11 or 3.12 recommended. Some ML dependencies may lag on newer versions.
-streamlit>=1.36
+# For the full local stack (Streamlit + Chroma + sentence-transformers):
+#     pip install -r requirements-local.txt
+# or:
+#     pip install -e ".[local]"
+
 fastapi>=0.111
 uvicorn[standard]>=0.30
-chromadb==1.5.9
-sentence-transformers>=3.0
-numpy>=1.26
-requests>=2.32
-beautifulsoup4>=4.12
-lxml>=5.2
 PyYAML>=6.0
 pydantic>=2.7
 python-dotenv>=1.0
 groq>=0.9
-pytest>=8.2
-httpx>=0.27
+requests>=2.32
+beautifulsoup4>=4.12
+lxml>=5.2

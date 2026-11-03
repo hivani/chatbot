@@ -84,26 +84,24 @@ touch src/__init__.py src/{ingest,rag,guardrails,query,app}/__init__.py
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-local.txt
 cp .env.example .env      # add GROQ_API_KEY and GROQ_MODEL
 ```
 
-### 1.3 `requirements.txt`
+### 1.3 `requirements.txt` and `requirements-local.txt`
+
+Vercel installs `requirements.txt` (also mirrored in `pyproject.toml`). It
+contains only the serverless runtime: FastAPI, Pydantic, PyYAML, Groq, and the
+ingest dependencies. The full local stack adds Streamlit, Chroma, and
+sentence-transformers:
 
 ```text
+# requirements-local.txt
+-r requirements.txt
 streamlit>=1.36
-fastapi>=0.111
-uvicorn[standard]>=0.30
-chromadb>=0.5
+chromadb==1.5.9
 sentence-transformers>=3.0
 numpy>=1.26
-requests>=2.32
-beautifulsoup4>=4.12
-lxml>=5.2
-PyYAML>=6.0
-pydantic>=2.7
-python-dotenv>=1.0
-groq>=0.9
 pytest>=8.2
 httpx>=0.27
 ```
