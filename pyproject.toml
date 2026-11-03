@@ -8,7 +8,6 @@ dependencies = [
     # Python function bundle is capped at 500 MB, so torch/Chroma must not be
     # included here. The API uses the BM25 retriever on Vercel.
     "fastapi>=0.111",
-    "uvicorn[standard]>=0.30",
     "PyYAML>=6.0",
     "pydantic>=2.7",
     "python-dotenv>=1.0",
@@ -24,6 +23,7 @@ dependencies = [
 # Vercel does not install optional dependencies.
 local = [
     "streamlit>=1.36",
+    "uvicorn[standard]>=0.30",
     "chromadb==1.5.9",
     "sentence-transformers>=3.0",
     "numpy>=1.26",

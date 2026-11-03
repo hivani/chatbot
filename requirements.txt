@@ -9,7 +9,6 @@
 #     pip install -e ".[local]"
 
 fastapi>=0.111
-uvicorn[standard]>=0.30
 PyYAML>=6.0
 pydantic>=2.7
 python-dotenv>=1.0

@@ -99,6 +99,7 @@ sentence-transformers:
 # requirements-local.txt
 -r requirements.txt
 streamlit>=1.36
+uvicorn[standard]>=0.30
 chromadb==1.5.9
 sentence-transformers>=3.0
 numpy>=1.26
