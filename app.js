@@ -1,1370 +1,832 @@
+/* Growchatbot — Stitch-derived facts-only chat UI.
+ *
+ * Talks to the FastAPI surface:
+ *   POST /query            → answer envelope
+ *   GET  /health           → index + provider status
+ *   GET  /artifacts/{id}   → six stage artifacts
+ *
+ * Client state is intentionally in-memory only: no cookies, no localStorage,
+ * no query analytics. Raw PII is refused server-side and never rendered back.
+ */
+
 (() => {
   "use strict";
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-  const money = (value, decimals = 2) =>
-    `₹${new Intl.NumberFormat("en-IN", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(value)}`;
-
-  const number = (value, decimals = 2) =>
-    new Intl.NumberFormat("en-IN", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(value);
-
-  const signedPercent = (value) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
-
-  const compactMoney = (value) => {
-    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)}Cr`;
-    if (value >= 100000) return `₹${(value / 100000).toFixed(2)}L`;
-    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}K`;
-    return `₹${value.toFixed(0)}`;
+  const elements = {
+    sidebar: $("#sidebar"),
+    sidebarClose: $("#sidebarClose"),
+    menuBtn: $("#menuBtn"),
+    scrim: $("#scrim"),
+    newChatBtn: $("#newChatBtn"),
+    welcome: $("#welcome"),
+    messages: $("#messages"),
+    queryForm: $("#queryForm"),
+    queryInput: $("#queryInput"),
+    sendBtn: $("#sendBtn"),
+    traceToggle: $("#traceToggle"),
+    traceDrawer: $("#traceDrawer"),
+    traceClose: $("#traceClose"),
+    traceMeta: $("#traceMeta"),
+    traceTabs: $("#traceTabs"),
+    traceBody: $("#traceBody"),
+    toast: $("#toast"),
+    statusDot: $("#statusDot"),
+    statusText: $("#statusText"),
+    indexCount: $("#indexCount"),
+    retrieverMode: $("#retrieverMode"),
+    generationMode: $("#generationMode"),
+    chatScroll: $("#chatScroll"),
   };
 
-  const chartTick = (value, usePrecision) => {
-    if (value >= 100000) return `₹${(value / 100000).toFixed(usePrecision ? 3 : 2)}L`;
-    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}K`;
-    return `₹${value.toFixed(0)}`;
-  };
-
-  /* ── Instruments & market data ────────────────────────────── */
-
-  const instruments = [
-    {
-      ticker: "RELIANCE",
-      name: "Reliance Industries",
-      price: 2986.4,
-      change: 1.86,
-      logoClass: "logo-reliance",
-      logoText: "R",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "reliance industries oil telecom retail",
-    },
-    {
-      ticker: "HDFCBANK",
-      name: "HDFC Bank",
-      price: 1712.3,
-      change: 0.74,
-      logoClass: "logo-hdfc",
-      logoText: "H",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "hdfc bank banking finance",
-    },
-    {
-      ticker: "INFY",
-      name: "Infosys",
-      price: 1842.1,
-      change: 1.12,
-      logoClass: "logo-infy",
-      logoText: "i",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "infosys technology it software",
-    },
-    {
-      ticker: "ZOMATO",
-      name: "Zomato",
-      price: 286.75,
-      change: 2.42,
-      logoClass: "logo-zomato",
-      logoText: "z",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "zomato food delivery quick commerce",
-    },
-    {
-      ticker: "TATAMOTORS",
-      name: "Tata Motors",
-      price: 1004.55,
-      change: 0.92,
-      logoClass: "logo-tata",
-      logoText: "T",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "tata motors auto ev vehicles",
-    },
-    {
-      ticker: "TCS",
-      name: "Tata Consultancy Services",
-      price: 4142.8,
-      change: -0.58,
-      logoClass: "logo-tcs",
-      logoText: "TCS",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "tcs technology it software",
-    },
+  const ARTIFACTS = [
+    { file: "00_request.json", label: "00 Request", short: "Request" },
+    { file: "01_guardrails.json", label: "01 Guardrails", short: "Guardrails" },
+    { file: "02_retrieval.json", label: "02 Retrieval", short: "Retrieval" },
+    { file: "03_prompt.txt", label: "03 Prompt", short: "Prompt" },
+    { file: "04_completion.json", label: "04 Completion", short: "Completion" },
+    { file: "05_response.json", label: "05 Response", short: "Response" },
   ];
 
-  const mostBoughtStocks = [
-    instruments[0],
-    instruments[3],
-    instruments[1],
-    instruments[4],
-    instruments[2],
-    instruments[5],
-  ];
-
-  const topGainers = [
-    {
-      ticker: "ADANIPORTS",
-      name: "Adani Ports",
-      price: 1412.65,
-      change: 4.82,
-      logoClass: "logo-adani",
-      logoText: "A",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "adani ports logistics infrastructure",
+  const STATUS = {
+    answered: { label: "Answered", tone: "is-ok", card: "" },
+    refused_pii: {
+      label: "Private data removed",
+      tone: "is-warn",
+      card: "is-refusal",
     },
-    {
-      ticker: "TRENT",
-      name: "Trent",
-      price: 6842.2,
-      change: 3.94,
-      logoClass: "logo-trent",
-      logoText: "T",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "trent retail tata",
+    refused_advice: {
+      label: "No investment advice",
+      tone: "is-warn",
+      card: "is-refusal",
     },
-    {
-      ticker: "BEL",
-      name: "Bharat Electronics",
-      price: 312.4,
-      change: 3.67,
-      logoClass: "logo-bel",
-      logoText: "BEL",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "bharat electronics defence",
+    refused_performance: {
+      label: "No performance calls",
+      tone: "is-warn",
+      card: "is-refusal",
     },
-    {
-      ticker: "JSWSTEEL",
-      name: "JSW Steel",
-      price: 1024.85,
-      change: 3.21,
-      logoClass: "logo-jsw",
-      logoText: "JSW",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "jsw steel metals",
+    insufficient_context: {
+      label: "Not in the sources",
+      tone: "is-warn",
+      card: "is-refusal",
     },
-    {
-      ticker: "TATAPOWER",
-      name: "Tata Power",
-      price: 428.9,
-      change: 2.96,
-      logoClass: "logo-tatapower",
-      logoText: "TP",
-      exchange: "NSE",
-      kind: "stock",
-      keywords: "tata power energy utilities",
-    },
-  ];
-
-  instruments.push(...topGainers.slice(0, 3));
-
-  const mostBoughtFunds = [
-    {
-      name: "HDFC Flexi Cap Fund",
-      amc: "HDFC",
-      amcMark: "H",
-      amcClass: "logo-hdfc",
-      category: "Flexi Cap",
-      chipClass: "chip-violet",
-      nav: 1842.5,
-      returnValue: 24.8,
-    },
-    {
-      name: "HDFC ELSS Tax Saver",
-      amc: "HDFC",
-      amcMark: "H",
-      amcClass: "logo-hdfc",
-      category: "ELSS",
-      chipClass: "chip-amber",
-      nav: 1218.9,
-      returnValue: 19.4,
-    },
-    {
-      name: "Nippon Nifty 50 Index",
-      amc: "Nippon",
-      amcMark: "N",
-      amcClass: "logo-nippon",
-      category: "Index",
-      chipClass: "chip-green",
-      nav: 248.75,
-      returnValue: 15.2,
-    },
-    {
-      name: "Parag Parikh Flexi Cap",
-      amc: "PPFAS",
-      amcMark: "P",
-      amcClass: "logo-ppfas",
-      category: "Flexi Cap",
-      chipClass: "chip-violet",
-      nav: 82.46,
-      returnValue: 22.1,
-    },
-    {
-      name: "ICICI Balanced Advantage",
-      amc: "ICICI",
-      amcMark: "I",
-      amcClass: "logo-icici",
-      category: "Hybrid",
-      chipClass: "chip-cyan",
-      nav: 68.92,
-      returnValue: 13.7,
-    },
-  ];
-
-  const topPerformingFunds = [
-    {
-      name: "Motilal Nasdaq 100 ETF",
-      amc: "Motilal",
-      amcMark: "M",
-      amcClass: "logo-motilal",
-      category: "Index ETF",
-      chipClass: "chip-cyan",
-      nav: 154.6,
-      returnValue: 31.6,
-    },
-    {
-      name: "HDFC Mid Cap Fund",
-      amc: "HDFC",
-      amcMark: "H",
-      amcClass: "logo-hdfc",
-      category: "Mid Cap",
-      chipClass: "chip-violet",
-      nav: 196.34,
-      returnValue: 28.2,
-    },
-    {
-      name: "Nippon Small Cap Fund",
-      amc: "Nippon",
-      amcMark: "N",
-      amcClass: "logo-nippon",
-      category: "Small Cap",
-      chipClass: "chip-violet",
-      nav: 142.78,
-      returnValue: 26.9,
-    },
-    {
-      name: "SBI Contra Fund",
-      amc: "SBI",
-      amcMark: "S",
-      amcClass: "logo-sbi",
-      category: "Contra",
-      chipClass: "chip-cyan",
-      nav: 392.15,
-      returnValue: 24.4,
-    },
-    {
-      name: "HDFC Gold ETF FoF",
-      amc: "HDFC",
-      amcMark: "H",
-      amcClass: "logo-hdfc",
-      category: "Gold",
-      chipClass: "chip-amber",
-      nav: 31.57,
-      returnValue: 21.8,
-    },
-  ];
-
-  const mostBookedFds = [
-    {
-      bank: "HDFC Bank",
-      mark: "H",
-      bankClass: "logo-hdfc",
-      rate: 7.25,
-      tenure: "1 – 2 years",
-      minimum: "Min. ₹5,000",
-    },
-    {
-      bank: "ICICI Bank",
-      mark: "I",
-      bankClass: "logo-icici",
-      rate: 7.1,
-      tenure: "15 – 18 months",
-      minimum: "Min. ₹10,000",
-    },
-    {
-      bank: "SBI",
-      mark: "S",
-      bankClass: "logo-sbi",
-      rate: 7.0,
-      tenure: "1 – 3 years",
-      minimum: "Min. ₹1,000",
-    },
-    {
-      bank: "Axis Bank",
-      mark: "A",
-      bankClass: "logo-axis",
-      rate: 7.1,
-      tenure: "18 – 24 months",
-      minimum: "Min. ₹5,000",
-    },
-    {
-      bank: "Kotak Mahindra",
-      mark: "K",
-      bankClass: "logo-kotak",
-      rate: 7.15,
-      tenure: "1 – 2 years",
-      minimum: "Min. ₹5,000",
-    },
-  ];
-
-  const highestRateFds = [
-    {
-      bank: "Bajaj Finance",
-      mark: "B",
-      bankClass: "logo-bajaj",
-      rate: 8.15,
-      tenure: "36 – 60 months",
-      minimum: "Min. ₹15,000",
-    },
-    {
-      bank: "Shriram Finance",
-      mark: "S",
-      bankClass: "logo-shriram",
-      rate: 8.1,
-      tenure: "36 – 60 months",
-      minimum: "Min. ₹5,000",
-    },
-    {
-      bank: "Ujjivan SFB",
-      mark: "U",
-      bankClass: "logo-ujjivan",
-      rate: 8.0,
-      tenure: "12 – 24 months",
-      minimum: "Min. ₹1,000",
-    },
-    {
-      bank: "HDFC Bank",
-      mark: "H",
-      bankClass: "logo-hdfc",
-      rate: 7.25,
-      tenure: "1 – 2 years",
-      minimum: "Min. ₹5,000",
-    },
-    {
-      bank: "IndusInd Bank",
-      mark: "I",
-      bankClass: "logo-indusind",
-      rate: 7.25,
-      tenure: "18 – 24 months",
-      minimum: "Min. ₹5,000",
-    },
-  ];
-
-  const searchData = [
-    ...instruments.map((item) => ({
-      ...item,
-      type: "stock",
-      typeLabel: "Stock",
-      meta: `${item.ticker} · ${item.exchange}`,
-    })),
-    {
-      id: "HDFC-FLEXI",
-      name: "HDFC Flexi Cap Fund",
-      meta: "Mutual fund · Direct plan",
-      type: "fund",
-      typeLabel: "Fund",
-      logoClass: "logo-hdfc",
-      logoText: "H",
-      toast: "HDFC Flexi Cap Fund details opened",
-    },
-    {
-      id: "HDFC-ELSS",
-      name: "HDFC ELSS Tax Saver",
-      meta: "Mutual fund · ELSS",
-      type: "fund",
-      typeLabel: "Fund",
-      logoClass: "logo-hdfc",
-      logoText: "H",
-      toast: "HDFC ELSS Tax Saver details opened",
-    },
-    {
-      id: "NIFTY-INDEX",
-      name: "Nifty 50 Index Fund",
-      meta: "Mutual fund · Index",
-      type: "fund",
-      typeLabel: "Fund",
-      logoClass: "logo-nippon",
-      logoText: "N",
-      toast: "Nifty 50 Index Fund details opened",
-    },
-    {
-      id: "NIFTY-BEES",
-      name: "Nippon India Nifty BeES",
-      meta: "ETF · NSE",
-      type: "etf",
-      typeLabel: "ETF",
-      logoClass: "logo-nippon",
-      logoText: "N",
-      toast: "Nippon India Nifty BeES details opened",
-    },
-    {
-      id: "NASDAQ-ETF",
-      name: "Motilal Oswal Nasdaq 100 ETF",
-      meta: "ETF · NSE",
-      type: "etf",
-      typeLabel: "ETF",
-      logoClass: "logo-motilal",
-      logoText: "M",
-      toast: "Motilal Oswal Nasdaq 100 ETF details opened",
-    },
-    {
-      id: "GOLD-ETF",
-      name: "HDFC Gold ETF Fund of Fund",
-      meta: "Mutual fund · Commodities",
-      type: "fund",
-      typeLabel: "Fund",
-      logoClass: "logo-hdfc",
-      logoText: "H",
-      toast: "HDFC Gold ETF Fund of Fund details opened",
-    },
-  ];
-
-  const periodData = {
-    "1D": {
-      values: [310640, 310920, 310780, 311150, 311040, 311420, 311350, 311680, 311590, 311860, 311780, 312050, 311950, 312480],
-      labels: ["9:15 AM", "9:45 AM", "10:15 AM", "10:45 AM", "11:15 AM", "11:45 AM", "12:15 PM", "12:45 PM", "1:15 PM", "1:45 PM", "2:15 PM", "2:45 PM", "3:15 PM", "3:30 PM"],
-      returnAmount: 1840,
-      returnPct: 0.59,
-      copy: "returns today",
-    },
-    "1W": {
-      values: [308260, 309010, 308540, 309380, 308970, 309760, 309480, 310270, 309910, 310840, 310650, 311420, 311060, 312480],
-      labels: ["Mon, 28 Oct", "Mon, 12:00", "Tue, 29 Oct", "Tue, 12:00", "Wed, 30 Oct", "Wed, 12:00", "Thu, 31 Oct", "Thu, 12:00", "Fri, 1 Nov", "Fri, 12:00", "Mon, 2 Nov", "Mon, 12:00", "Tue, 3 Nov", "Now"],
-      returnAmount: 4220,
-      returnPct: 1.37,
-      copy: "returns this week",
-    },
-    "1M": {
-      values: [300810, 302340, 301450, 303120, 302680, 304470, 303910, 305780, 304960, 307120, 306480, 308760, 307940, 312480],
-      labels: ["6 Oct", "8 Oct", "10 Oct", "12 Oct", "14 Oct", "16 Oct", "18 Oct", "20 Oct", "22 Oct", "24 Oct", "26 Oct", "29 Oct", "1 Nov", "3 Nov"],
-      returnAmount: 11670,
-      returnPct: 3.88,
-      copy: "returns this month",
-    },
-    "1Y": {
-      values: [274850, 279640, 285120, 281760, 289430, 294180, 291560, 299780, 304220, 301560, 307840, 305290, 309640, 312480],
-      labels: ["Nov 25", "Dec 25", "Jan 26", "Feb 26", "Mar 26", "Apr 26", "May 26", "Jun 26", "Jul 26", "Aug 26", "Sep 26", "Oct 26", "Oct 26", "Nov 26"],
-      returnAmount: 37630,
-      returnPct: 13.65,
-      copy: "returns in the last year",
-    },
-    ALL: {
-      values: [170000, 186400, 179800, 205600, 231900, 218400, 248700, 264300, 251800, 279600, 291300, 286700, 304800, 312480],
-      labels: ["2019", "2020", "2020", "2021", "2021", "2022", "2022", "2023", "2023", "2024", "2024", "2025", "2026", "Now"],
-      returnAmount: 142480,
-      returnPct: 83.8,
-      copy: "returns since inception",
+    error: {
+      label: "Couldn't validate",
+      tone: "is-error",
+      card: "is-error",
     },
   };
 
-  const logoMarkup = (item, extraClass = "") =>
-    `<span class="company-logo ${item.logoClass} ${extraClass}" aria-hidden="true">${item.logoText}</span>`;
-
-  /* ── Sparklines ───────────────────────────────────────────── */
-
-  const sparkValues = {
-    nifty: [23940, 24120, 24030, 24280, 24190, 24460, 24370, 24540, 24480, 24710, 24640, 24812],
-    sensex: [79750, 80210, 79940, 80680, 80320, 81050, 80760, 81420],
-    nasdaq: [19120, 19070, 19095, 19020, 19060, 18990, 19010, 18950, 18980, 18940, 18938],
+  const state = {
+    busy: false,
+    requestId: 0,
+    latestQueryId: null,
+    latestStatus: null,
+    activeTraceQueryId: null,
+    activeArtifact: null,
+    artifacts: new Map(),
+    toastTimer: null,
+    lastFocused: null,
   };
 
-  function smoothPath(points) {
-    if (!points.length) return "";
-    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-    for (let index = 1; index < points.length; index += 1) {
-      const previous = points[index - 1];
-      const current = points[index];
-      const midX = (previous.x + current.x) / 2;
-      path += ` C ${midX.toFixed(2)} ${previous.y.toFixed(2)}, ${midX.toFixed(2)} ${current.y.toFixed(2)}, ${current.x.toFixed(2)} ${current.y.toFixed(2)}`;
+  /* ── Formatting helpers ─────────────────────────────────────── */
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (character) => {
+      switch (character) {
+        case "&":
+          return "&amp;";
+        case "<":
+          return "&lt;";
+        case ">":
+          return "&gt;";
+        case '"':
+          return "&quot;";
+        default:
+          return "&#39;";
+      }
+    });
+  }
+
+  function icon(name, className = "icon") {
+    return `<svg class="${className}" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
+  }
+
+  function sourceTime(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "UTC",
+      timeZoneName: "short",
+    });
+  }
+
+  function clockTime(date = new Date()) {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function humanize(value) {
+    return String(value ?? "")
+      .replace(/[_-]+/g, " ")
+      .trim()
+      .replace(/^\w/, (character) => character.toUpperCase());
+  }
+
+  function shortQueryId(queryId) {
+    if (!queryId) return "No query yet";
+    if (queryId.length <= 22) return queryId;
+    return `${queryId.slice(0, 13)}…${queryId.slice(-6)}`;
+  }
+
+  function statusFor(status) {
+    return (
+      STATUS[status] || {
+        label: humanize(status || "Unknown"),
+        tone: "is-warn",
+        card: "is-refusal",
+      }
+    );
+  }
+
+  function providerLabel(provider) {
+    if (!provider) return "—";
+    if (provider === "offline-extractive") return "Offline";
+    if (provider === "groq") return "Groq";
+    return humanize(provider);
+  }
+
+  function retrieverLabel(mode) {
+    if (mode === "lexical-bm25") return "BM25";
+    if (mode === "vector") return "Vector";
+    return mode ? humanize(mode) : "—";
+  }
+
+  function scrollToLatest() {
+    elements.chatScroll.scrollTop = elements.chatScroll.scrollHeight;
+  }
+
+  function showToast(message) {
+    elements.toast.textContent = message;
+    elements.toast.classList.add("is-visible");
+    if (state.toastTimer) window.clearTimeout(state.toastTimer);
+    state.toastTimer = window.setTimeout(() => {
+      elements.toast.classList.remove("is-visible");
+    }, 2400);
+  }
+
+  /* ── Health ─────────────────────────────────────────────────── */
+
+  async function loadHealth() {
+    try {
+      const response = await fetch("/health", {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) throw new Error(`Health returned ${response.status}`);
+      const health = await response.json();
+      const ready = health.status === "ok";
+
+      elements.statusDot.classList.toggle("is-ok", ready);
+      elements.statusDot.classList.toggle("is-error", !ready);
+      elements.statusText.textContent = ready
+        ? `Index ready · ${(health.index_count ?? 0).toLocaleString()} official passages`
+        : "Index not ready";
+      elements.indexCount.textContent = Number.isFinite(Number(health.index_count))
+        ? Number(health.index_count).toLocaleString()
+        : "—";
+      elements.retrieverMode.textContent = retrieverLabel(health.retriever);
+      elements.retrieverMode.title = health.retriever || "";
+      elements.generationMode.textContent = providerLabel(health.generator_provider);
+      elements.generationMode.title = health.generator_provider || "";
+    } catch (error) {
+      elements.statusDot.classList.remove("is-ok");
+      elements.statusDot.classList.add("is-error");
+      elements.statusText.textContent = "API unavailable";
+      elements.indexCount.textContent = "—";
+      elements.retrieverMode.textContent = "—";
+      elements.generationMode.textContent = "—";
+      console.warn("Health check failed", error);
     }
-    return path;
   }
 
-  function drawSparkline(element, values, color, id) {
-    if (!element) return;
-    const width = 112;
-    const height = 42;
-    const paddingX = 2;
-    const paddingY = 4;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min || 1;
-    const points = values.map((value, index) => ({
-      x: paddingX + (index / (values.length - 1)) * (width - paddingX * 2),
-      y: paddingY + ((max - value) / range) * (height - paddingY * 2),
-    }));
-    const line = smoothPath(points);
-    const area = `${line} L ${points[points.length - 1].x.toFixed(2)} ${height - paddingY} L ${points[0].x.toFixed(2)} ${height - paddingY} Z`;
+  /* ── Conversation rendering ─────────────────────────────────── */
 
-    element.innerHTML = `
-      <defs>
-        <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${color}" stop-opacity="0.18"/>
-          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <path class="spark-area" d="${area}" fill="url(#${id})"/>
-      <path class="spark-line" d="${line}" stroke="${color}" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${points[points.length - 1].x.toFixed(2)}" cy="${points[points.length - 1].y.toFixed(2)}" r="1.9" fill="${color}" stroke="#fff" stroke-width="1.2"/>
-    `;
+  function appendTurn(html) {
+    elements.welcome.hidden = true;
+    const wrapper = document.createElement("article");
+    wrapper.innerHTML = html;
+    const turn = wrapper.firstElementChild;
+    elements.messages.append(turn);
+    scrollToLatest();
+    return turn;
   }
 
-  drawSparkline($("#sparkNifty"), sparkValues.nifty, "#00b386", "niftyGradient");
-  drawSparkline($("#sparkSensex"), sparkValues.sensex, "#00b386", "sensexGradient");
-  drawSparkline($("#sparkNasdaq"), sparkValues.nasdaq, "#eb5757", "nasdaqGradient");
-
-  /* ── Market discovery panels ──────────────────────────────── */
-
-  const stockCard = (item) => {
-    const positive = item.change >= 0;
-    return `
-      <button class="quote-card" type="button" data-instrument="${item.ticker}" aria-label="${item.name}, ${money(item.price)}, ${signedPercent(item.change)}">
-        <div class="quote-card-head">
-          ${logoMarkup(item)}
-          <span class="quote-card-copy">
-            <strong>${item.ticker}</strong>
-            <span>${item.name}</span>
-          </span>
-        </div>
-        <div class="quote-card-bottom">
-          <span class="quote-price">${money(item.price)}</span>
-          <span class="quote-change ${positive ? "positive" : "negative"}">${signedPercent(item.change)}</span>
-        </div>
-      </button>
+  function renderUserTurn(query) {
+    const turn = document.createElement("article");
+    turn.className = "turn turn-user";
+    turn.innerHTML = `
+      <div class="user-bubble"></div>
+      <time class="turn-time">${escapeHtml(clockTime())}</time>
     `;
-  };
+    $(".user-bubble", turn).textContent = query;
+    elements.welcome.hidden = true;
+    elements.messages.append(turn);
+    scrollToLatest();
+    return turn;
+  }
 
-  const gainerCard = (item) => {
-    const positive = item.change >= 0;
-    return `
-      <button class="gainer-card" type="button" data-instrument="${item.ticker}" aria-label="${item.name}, ${money(item.price)}, ${signedPercent(item.change)}">
-        ${logoMarkup(item)}
-        <span class="gainer-copy">
-          <strong>${item.ticker}</strong>
-          <span>${item.name}</span>
-        </span>
-        <span class="gainer-right">
-          <strong>${money(item.price)}</strong>
-          <span class="${positive ? "" : "negative"}">${signedPercent(item.change)}</span>
-        </span>
-      </button>
-    `;
-  };
-
-  const fundCard = (item) => `
-    <button class="fund-card" type="button" data-toast="${item.name} details opened">
-      <div class="fund-card-top">
-        <span class="fund-badge ${item.amcClass}" aria-hidden="true">${item.amcMark}</span>
-        <span class="category-chip ${item.chipClass}">${item.category}</span>
-      </div>
-      <h4>${item.name}</h4>
-      <div class="fund-card-bottom">
-        <span>NAV ${money(item.nav)}</span>
-        <strong>+${item.returnValue.toFixed(1)}% 1Y</strong>
-      </div>
-    </button>
-  `;
-
-  const fdCard = (item) => `
-    <button class="fd-card" type="button" data-toast="${item.bank} FD booking opened">
-      <div class="fd-card-top">
-        <span class="fd-bank">
-          <span class="fund-badge ${item.bankClass}" aria-hidden="true">${item.mark}</span>
-          <span class="fd-bank-copy">
-            <strong>${item.bank}</strong>
-            <span>${item.tenure}</span>
+  function renderPendingTurn() {
+    return appendTurn(`
+      <div class="turn turn-assistant">
+        <header class="assistant-head">
+          <span class="ai-mark" aria-hidden="true"><span class="ai-dot"></span></span>
+          <span class="assistant-id">
+            <strong>Growchatbot</strong>
+            <span>Official sources · facts only</span>
           </span>
-        </span>
-        <span class="fd-rate">${item.rate.toFixed(2)}<span>% p.a.</span></span>
-      </div>
-      <div class="fd-card-bottom">
-        <span>${item.minimum}</span>
-        <strong>Book FD →</strong>
-      </div>
-    </button>
-  `;
-
-  const sectionMarkup = ({ key, title, subtitle, itemMarkup }) => `
-    <div class="quote-section">
-      <div class="section-row">
-        <div class="section-title">
-          <h3>${title}</h3>
-          <span>${subtitle}</span>
-        </div>
-        <div class="section-actions">
-          <button class="text-link" type="button" data-toast="Viewing all ${title.toLowerCase()}">View all</button>
-          <div class="carousel-nav" aria-label="${title} carousel controls">
-            <button class="carousel-arrow" type="button" data-carousel-target="${key}" data-dir="-1" aria-label="Previous ${title}">
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m12.5 4.5-5 5.5 5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <button class="carousel-arrow" type="button" data-carousel-target="${key}" data-dir="1" aria-label="Next ${title}">
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7.5 4.5 5 5.5-5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+          <span class="status-badge" id="pendingBadge">Checking sources</span>
+        </header>
+        <div class="assistant-card">
+          <div class="typing" role="status" aria-label="Retrieving and validating">
+            <span></span><span></span><span></span>
           </div>
         </div>
       </div>
-      <div class="carousel">
-        <div class="carousel-track" id="${key}" tabindex="0" aria-label="${title}">
-          ${itemMarkup}
+    `);
+  }
+
+  function citationHtml(citation) {
+    if (!citation || !citation.url) return "";
+    const title = citation.title || citation.url;
+    return `
+      <a class="citation-card" href="${escapeHtml(citation.url)}"
+         target="_blank" rel="noopener noreferrer">
+        <span class="citation-icon">${icon("external")}</span>
+        <span class="citation-copy">
+          <span class="citation-label">Official source</span>
+          <strong>${escapeHtml(title)}</strong>
+          <span class="citation-url">${escapeHtml(citation.url)}</span>
+        </span>
+        ${icon("external", "icon citation-arrow")}
+      </a>
+    `;
+  }
+
+  function metaChips(payload, status) {
+    const chips = [];
+    if (status === "answered" && payload.validation) {
+      const count = payload.validation.sentence_count;
+      if (Number.isFinite(Number(count))) {
+        chips.push(`${escapeHtml(count)} sentence${Number(count) === 1 ? "" : "s"}`);
+      }
+      chips.push("1 citation");
+      const checks = payload.validation.checks || {};
+      const passed = Object.values(checks).every(Boolean);
+      chips.push(passed ? "Validation passed" : "Validation partial");
+    } else if (payload.refusal_reason) {
+      chips.push(`Reason: ${escapeHtml(humanize(payload.refusal_reason))}`);
+      chips.push("Stopped before generation");
+    }
+    if (payload.query_id) {
+      chips.push(`ID ${escapeHtml(shortQueryId(payload.query_id))}`);
+    }
+    if (!chips.length) return "";
+    return `
+      <div class="answer-meta">
+        ${chips
+          .map(
+            (chip, index) =>
+              `<span class="meta-chip${index === 0 && status === "answered" ? " is-ok" : ""}">${chip}</span>`,
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  function renderAnswerTurn(payload) {
+    const status = statusFor(payload.status);
+    const answered = payload.status === "answered";
+    const lastUpdated = answered && payload.last_updated
+      ? `<p class="last-updated">
+           ${icon("clock")}
+           <span>Last updated from sources: <time datetime="${escapeHtml(payload.last_updated)}">${escapeHtml(sourceTime(payload.last_updated))}</time></span>
+         </p>`
+      : "";
+
+    return appendTurn(`
+      <div class="turn turn-assistant">
+        <header class="assistant-head">
+          <span class="ai-mark" aria-hidden="true"><span class="ai-dot"></span></span>
+          <span class="assistant-id">
+            <strong>Growchatbot</strong>
+            <span>Official sources · facts only</span>
+          </span>
+          <span class="status-badge ${status.tone}">${escapeHtml(status.label)}</span>
+        </header>
+        <div class="assistant-card ${status.card}">
+          <p class="answer-text">${escapeHtml(payload.answer || "No answer was returned.")}</p>
+          ${citationHtml(payload.citation)}
+          ${lastUpdated}
+          ${metaChips(payload, payload.status)}
+        </div>
+        <div class="turn-toolbar">
+          <button class="tool-btn" type="button" data-action="copy" data-query-id="${escapeHtml(payload.query_id || "")}">
+            ${icon("copy")}<span>Copy</span>
+          </button>
+          <button class="tool-btn" type="button" data-action="trace" data-query-id="${escapeHtml(payload.query_id || "")}">
+            ${icon("trace")}<span>RAG trace</span>
+          </button>
         </div>
       </div>
-    </div>
-  `;
+    `);
+  }
 
-  const marketPanels = [
-    {
-      key: "stocks",
-      label: "Stocks",
-      primary: {
-        key: "stocksMostBought",
-        title: "Most bought",
-        subtitle: "Popular with investors today",
-        items: mostBoughtStocks.map(stockCard).join(""),
-      },
-      secondary: {
-        key: "stocksTopGainers",
-        title: "Top gainers",
-        subtitle: "NSE · Live",
-        items: topGainers.map(gainerCard).join(""),
-      },
-    },
-    {
-      key: "mutualFunds",
-      label: "Mutual Funds",
-      primary: {
-        key: "fundsMostBought",
-        title: "Most bought",
-        subtitle: "Direct plans · Zero commission",
-        items: mostBoughtFunds.map(fundCard).join(""),
-      },
-      secondary: {
-        key: "fundsTopPerformers",
-        title: "Top performers",
-        subtitle: "1 year returns",
-        items: topPerformingFunds.map(fundCard).join(""),
-      },
-    },
-    {
-      key: "fixedDeposits",
-      label: "Fixed Deposits",
-      primary: {
-        key: "fdsMostBooked",
-        title: "Most booked",
-        subtitle: "Trusted bank FDs",
-        items: mostBookedFds.map(fdCard).join(""),
-      },
-      secondary: {
-        key: "fdsHighestRates",
-        title: "Highest rates",
-        subtitle: "Corporate & bank FDs",
-        items: highestRateFds.map(fdCard).join(""),
-      },
-    },
-  ];
-
-  $("#marketPanels").innerHTML = marketPanels
-    .map(
-      (panel, index) => `
-        <div class="market-panel ${index === 0 ? "is-active" : ""}" data-market-panel="${panel.key}" role="tabpanel" aria-label="${panel.label}">
-          ${sectionMarkup({ ...panel.primary, itemMarkup: panel.primary.items })}
-          <div class="section-divider"></div>
-          ${sectionMarkup({ ...panel.secondary, itemMarkup: panel.secondary.items })}
+  function renderErrorTurn(message) {
+    return appendTurn(`
+      <div class="turn turn-assistant">
+        <header class="assistant-head">
+          <span class="ai-mark" aria-hidden="true"><span class="ai-dot"></span></span>
+          <span class="assistant-id">
+            <strong>Growchatbot</strong>
+            <span>Official sources · facts only</span>
+          </span>
+          <span class="status-badge is-error">Connection error</span>
+        </header>
+        <div class="assistant-card is-error">
+          <p class="answer-text">${escapeHtml(message)}</p>
+          <div class="answer-meta">
+            <span class="meta-chip">No personal data was sent or stored</span>
+          </div>
         </div>
-      `,
-    )
-    .join("");
-
-  /* ── Carousels ────────────────────────────────────────────── */
-
-  function updateCarouselArrows(targetId) {
-    const track = document.getElementById(targetId);
-    if (!track) return;
-    const section = track.closest(".quote-section");
-    if (!section) return;
-    const previous = $('[data-carousel-target="' + targetId + '"][data-dir="-1"]', section);
-    const next = $('[data-carousel-target="' + targetId + '"][data-dir="1"]', section);
-    if (!previous || !next) return;
-    if (!track.clientWidth) return;
-    previous.disabled = track.scrollLeft <= 1;
-    next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+        <div class="turn-toolbar">
+          <button class="tool-btn" type="button" data-action="retry">
+            ${icon("arrow")}<span>Try again</span>
+          </button>
+        </div>
+      </div>
+    `);
   }
 
-  function refreshVisibleCarousels() {
-    $$(".carousel-track").forEach((track) => {
-      const panel = track.closest(".market-panel");
-      if (panel && !panel.classList.contains("is-active")) return;
-      updateCarouselArrows(track.id);
-    });
+  /* ── Query flow ─────────────────────────────────────────────── */
+
+  function setBusy(busy) {
+    state.busy = busy;
+    elements.messages.setAttribute("aria-busy", String(busy));
+    elements.queryForm.classList.toggle("is-busy", busy);
+    elements.sendBtn.disabled = busy || !elements.queryInput.value.trim();
   }
 
-  $$(".carousel-track").forEach((track) => {
-    track.addEventListener("scroll", () => updateCarouselArrows(track.id), { passive: true });
-    track.addEventListener("keydown", (event) => {
-      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-      event.preventDefault();
-      track.scrollBy({ left: (event.key === "ArrowRight" ? 1 : -1) * track.clientWidth * 0.72, behavior: "smooth" });
-    });
-  });
-
-  document.addEventListener("click", (event) => {
-    const arrow = event.target.closest(".carousel-arrow");
-    if (!arrow || arrow.disabled) return;
-    const track = document.getElementById(arrow.dataset.carouselTarget);
-    if (!track) return;
-    track.scrollBy({ left: Number(arrow.dataset.dir) * track.clientWidth * 0.78, behavior: "smooth" });
-    window.setTimeout(() => updateCarouselArrows(track.id), 360);
-  });
-
-  window.addEventListener("resize", () => {
-    window.clearTimeout(window.__carouselResizeTimer);
-    window.__carouselResizeTimer = window.setTimeout(refreshVisibleCarousels, 120);
-  });
-
-  requestAnimationFrame(() => {
-    refreshVisibleCarousels();
-    $$(".carousel-track").forEach((track) => {
-      track.scrollLeft = 0;
-    });
-  });
-
-  /* ── Market tabs ──────────────────────────────────────────── */
-
-  function selectMarketTab(key) {
-    $$(".market-tab").forEach((tab) => {
-      const active = tab.dataset.marketTab === key;
-      tab.classList.toggle("is-active", active);
-      tab.setAttribute("aria-selected", String(active));
-    });
-    $$(".market-panel").forEach((panel) => {
-      panel.classList.toggle("is-active", panel.dataset.marketPanel === key);
-    });
-    requestAnimationFrame(refreshVisibleCarousels);
+  function autoGrow() {
+    const input = elements.queryInput;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 156)}px`;
+    elements.sendBtn.disabled = state.busy || !input.value.trim();
   }
 
-  $$(".market-tab").forEach((tab) => {
-    tab.addEventListener("click", () => selectMarketTab(tab.dataset.marketTab));
-  });
-
-  /* ── Portfolio chart ──────────────────────────────────────── */
-
-  const chartSvg = $("#portfolioChart");
-  const chartWrap = $("#chartWrap");
-  const chartTooltip = $("#chartTooltip");
-  const chartTooltipDate = $("#chartTooltipDate");
-  const chartTooltipValue = $("#chartTooltipValue");
-  let activePeriod = "1Y";
-  let chartGeometry = null;
-  let chartAnimationFrame = null;
-
-  function renderChart(period, animate = true) {
-    const data = periodData[period];
-    if (!data || !chartSvg || !chartWrap) return;
-    activePeriod = period;
-
-    const width = Math.max(320, chartWrap.clientWidth);
-    const height = Math.max(128, chartWrap.clientHeight);
-    const padding = { left: 3, right: 57, top: 12, bottom: 21 };
-    const values = data.values;
-    const lowest = Math.min(...values);
-    const highest = Math.max(...values);
-    const expansion = (highest - lowest || highest * 0.01) * 0.18;
-    const min = lowest - expansion * 0.55;
-    const max = highest + expansion;
-    const range = max - min;
-    const usePrecision = (highest - lowest) / highest < 0.03;
-
-    const xFor = (index) =>
-      padding.left + (index / (values.length - 1)) * (width - padding.left - padding.right);
-    const yFor = (value) =>
-      padding.top + ((max - value) / range) * (height - padding.top - padding.bottom);
-
-    const points = values.map((value, index) => ({ x: xFor(index), y: yFor(value) }));
-    const linePath = smoothPath(points);
-    const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(2)} ${(height - padding.bottom).toFixed(2)} L ${points[0].x.toFixed(2)} ${(height - padding.bottom).toFixed(2)} Z`;
-
-    const gridLines = [];
-    const tickCount = 4;
-    for (let index = 0; index < tickCount; index += 1) {
-      const ratio = index / (tickCount - 1);
-      const value = max - ratio * (max - min);
-      const y = yFor(value);
-      gridLines.push(`
-        <line class="chart-grid-line" x1="${padding.left}" y1="${y.toFixed(2)}" x2="${(width - padding.right).toFixed(2)}" y2="${y.toFixed(2)}"/>
-        <text class="chart-axis-label" x="${(width - padding.right + 7).toFixed(2)}" y="${(y + 2.8).toFixed(2)}" text-anchor="start">${chartTick(value, usePrecision)}</text>
-      `);
+  function errorMessage(payload, status) {
+    const detail = payload && payload.detail;
+    if (detail && typeof detail === "object") {
+      return detail.message || detail.error || `Request failed (${status}).`;
     }
+    if (typeof detail === "string" && detail.trim()) return detail;
+    return `Request failed (${status}). Please try again.`;
+  }
 
-    const firstLabel = data.labels[0];
-    const middleLabel = data.labels[Math.floor((data.labels.length - 1) / 2)];
-    const lastLabel = data.labels[data.labels.length - 1];
-    const xLabels = `
-      <text class="chart-axis-label" x="${padding.left}" y="${height - 4}" text-anchor="start">${firstLabel}</text>
-      <text class="chart-axis-label" x="${(width - padding.right) / 2}" y="${height - 4}" text-anchor="middle">${middleLabel}</text>
-      <text class="chart-axis-label" x="${width - padding.right}" y="${height - 4}" text-anchor="end">${lastLabel}</text>
-    `;
+  async function submitQuery(rawQuery) {
+    const query = String(rawQuery || "").trim();
+    if (!query || state.busy) return;
 
-    const lastPoint = points[points.length - 1];
+    renderUserTurn(query);
+    elements.queryInput.value = "";
+    autoGrow();
+    setBusy(true);
 
-    chartSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    chartSvg.innerHTML = `
-      <defs>
-        <linearGradient id="chartAreaGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#00b386" stop-opacity="0.17"/>
-          <stop offset="65%" stop-color="#00b386" stop-opacity="0.05"/>
-          <stop offset="100%" stop-color="#00b386" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <g>${gridLines.join("")}</g>
-      <g>${xLabels}</g>
-      <path class="chart-area" d="${areaPath}" fill="url(#chartAreaGradient)"/>
-      <path class="chart-line" d="${linePath}"/>
-      <circle cx="${lastPoint.x.toFixed(2)}" cy="${lastPoint.y.toFixed(2)}" r="7.5" fill="rgba(0, 179, 134, 0.10)"/>
-      <circle cx="${lastPoint.x.toFixed(2)}" cy="${lastPoint.y.toFixed(2)}" r="3.2" fill="#00b386" stroke="#fff" stroke-width="1.7"/>
-      <g id="chartFocus" visibility="hidden">
-        <line class="chart-hover-line" y1="${padding.top}" y2="${height - padding.bottom}"/>
-        <circle class="chart-hover-dot" r="3.6"/>
-      </g>
-      <rect id="chartHitArea" x="${padding.left}" y="0" width="${width - padding.left - padding.right}" height="${height}" fill="transparent" style="cursor: crosshair"/>
-    `;
+    const pending = renderPendingTurn();
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 65000);
+    const requestId = ++state.requestId;
 
-    chartGeometry = { width, height, padding, points, data, xFor, yFor };
-
-    const line = $(".chart-line", chartSvg);
-    const area = $(".chart-area", chartSvg);
-    if (animate && line) {
-      const length = line.getTotalLength();
-      line.style.strokeDasharray = `${length}`;
-      line.style.strokeDashoffset = `${length}`;
-      area.style.opacity = "0";
-      window.requestAnimationFrame(() => {
-        line.style.transition = "stroke-dashoffset 600ms cubic-bezier(0.25, 0.7, 0.25, 1)";
-        line.style.strokeDashoffset = "0";
-        area.style.transition = "opacity 500ms ease 90ms";
-        area.style.opacity = "1";
+    try {
+      const response = await fetch("/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ query }),
+        signal: controller.signal,
       });
-    }
 
-    const hitArea = $("#chartHitArea", chartSvg);
-    if (hitArea) {
-      hitArea.addEventListener("pointermove", (event) => handleChartPointer(event));
-      hitArea.addEventListener("pointerleave", hideChartHover);
-    }
-
-    chartSvg.setAttribute("aria-label", `Portfolio value over ${period === "ALL" ? "all time" : `the last ${period}`}, current value ₹3,12,480`);
-    hideChartHover();
-  }
-
-  function handleChartPointer(event) {
-    if (!chartGeometry) return;
-    const bounds = chartSvg.getBoundingClientRect();
-    const localX = event.clientX - bounds.left;
-    const { points, data, padding } = chartGeometry;
-
-    let closestIndex = 0;
-    let closestDistance = Infinity;
-    points.forEach((point, index) => {
-      const distance = Math.abs(point.x - localX);
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestIndex = index;
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (_error) {
+        payload = null;
       }
+
+      if (requestId !== state.requestId) {
+        pending.remove();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(errorMessage(payload, response.status));
+      }
+
+      pending.remove();
+      const turn = renderAnswerTurn(payload);
+
+      state.latestQueryId = payload.query_id || null;
+      state.latestStatus = payload.status || null;
+      state.activeTraceQueryId = payload.query_id || null;
+      elements.traceToggle.disabled = !state.latestQueryId;
+
+      // Warm the artifact cache so the inspector opens instantly.
+      if (state.latestQueryId) {
+        void loadArtifacts(state.latestQueryId).catch(() => {});
+      }
+
+      if (payload.disclaimer) {
+        turn.dataset.disclaimer = payload.disclaimer;
+      }
+    } catch (error) {
+      pending.remove();
+      if (requestId === state.requestId) {
+        const message =
+          error.name === "AbortError"
+            ? "The request timed out after 65 seconds. The index may still be warming up — try again."
+            : error.message || "The server didn't respond. Check that the API is running.";
+        renderErrorTurn(message);
+      }
+    } finally {
+      window.clearTimeout(timeout);
+      if (requestId === state.requestId) {
+        setBusy(false);
+        elements.queryInput.focus();
+      }
+    }
+  }
+
+  /* ── Artifacts / RAG inspector ──────────────────────────────── */
+
+  async function loadArtifacts(queryId) {
+    if (!queryId) throw new Error("No query selected");
+    if (state.artifacts.has(queryId)) return state.artifacts.get(queryId);
+
+    const response = await fetch(`/artifacts/${encodeURIComponent(queryId)}`, {
+      headers: { Accept: "application/json" },
     });
-
-    const point = points[closestIndex];
-    const focus = $("#chartFocus", chartSvg);
-    const hoverLine = $(".chart-hover-line", chartSvg);
-    const hoverDot = $(".chart-hover-dot", chartSvg);
-    if (!focus || !hoverLine || !hoverDot) return;
-
-    focus.setAttribute("visibility", "visible");
-    hoverLine.setAttribute("x1", point.x.toFixed(2));
-    hoverLine.setAttribute("x2", point.x.toFixed(2));
-    hoverLine.setAttribute("y1", padding.top.toFixed(2));
-    hoverLine.setAttribute("y2", (chartGeometry.height - padding.bottom).toFixed(2));
-    hoverDot.setAttribute("cx", point.x.toFixed(2));
-    hoverDot.setAttribute("cy", point.y.toFixed(2));
-
-    chartTooltipDate.textContent = data.labels[closestIndex];
-    chartTooltipValue.textContent = money(data.values[closestIndex], 0);
-    chartTooltip.hidden = false;
-    const tooltipX = Math.min(Math.max(point.x, 48), chartGeometry.width - 48);
-    const tooltipY = Math.max(point.y - 7, 36);
-    chartTooltip.style.left = `${tooltipX}px`;
-    chartTooltip.style.top = `${tooltipY}px`;
+    if (!response.ok) {
+      throw new Error(`Artifacts returned ${response.status}`);
+    }
+    const payload = await response.json();
+    state.artifacts.set(queryId, payload.artifacts || {});
+    return payload.artifacts || {};
   }
 
-  function hideChartHover() {
-    const focus = $("#chartFocus", chartSvg);
-    if (focus) focus.setAttribute("visibility", "hidden");
-    if (chartTooltip) chartTooltip.hidden = true;
+  function artifactChip(text, tone) {
+    return `<span class="meta-chip${tone ? ` ${tone}` : ""}">${escapeHtml(text)}</span>`;
   }
 
-  function updatePeriodSummary(period) {
-    const data = periodData[period];
-    const pill = $("#periodReturnPill");
-    const amount = $("#periodReturnAmount");
-    const copy = $("#periodReturnCopy");
-    const positive = data.returnPct >= 0;
-    pill.textContent = `${positive ? "+" : ""}${data.returnPct.toFixed(2)}%`;
-    pill.classList.toggle("positive", positive);
-    pill.classList.toggle("negative", !positive);
-    amount.textContent = `${positive ? "+" : "−"}${money(Math.abs(data.returnAmount), 0)}`;
-    amount.classList.toggle("positive-text", positive);
-    amount.classList.toggle("negative-text", !positive);
-    copy.textContent = data.copy;
+  function renderMeta(queryId, status, artifacts) {
+    const count = Object.keys(artifacts || {}).length;
+    const chips = [
+      artifactChip(shortQueryId(queryId), "is-ok"),
+      artifactChip(`${count}/6 artifacts`),
+    ];
+    if (status) chips.push(artifactChip(statusFor(status).label));
+    elements.traceMeta.innerHTML = chips.join("");
   }
 
-  function selectPeriod(period) {
-    $$(".timeline-tab").forEach((tab) => {
-      const active = tab.dataset.period === period;
-      tab.classList.toggle("is-active", active);
-      tab.setAttribute("aria-selected", String(active));
-    });
-    updatePeriodSummary(period);
-    renderChart(period, true);
+  function retrievalSummary(retrieval) {
+    if (!retrieval || typeof retrieval !== "object") return "";
+    const results = Array.isArray(retrieval.results) ? retrieval.results : [];
+    const chips = [
+      artifactChip(retrieval.embedding_model || "retriever"),
+      artifactChip(retrieval.collection || "collection"),
+      artifactChip(`${results.length} passage${results.length === 1 ? "" : "s"}`),
+      artifactChip(`top_k ${retrieval.top_k ?? "—"}`),
+    ];
+    if (retrieval.min_score !== undefined) {
+      chips.push(artifactChip(`min ${retrieval.min_score}`));
+    }
+
+    const rows = results
+      .map((result) => {
+        const score = Number(result.score);
+        const text = String(result.text || "").replace(/\s+/g, " ").trim();
+        return `
+          <div class="trace-chunk">
+            <span class="trace-rank">${escapeHtml(result.rank ?? "")}</span>
+            <div class="trace-chunk-copy">
+              <strong>${escapeHtml(result.source_title || result.chunk_id || "Passage")}</strong>
+              <p>${escapeHtml(result.section ? `${result.section} · ${text}` : text)}</p>
+            </div>
+            <span class="trace-score">${Number.isFinite(score) ? score.toFixed(3) : "—"}</span>
+          </div>
+        `;
+      })
+      .join("");
+
+    return `
+      <div class="trace-summary">
+        <h3>Retrieval summary</h3>
+        <div class="trace-summary-row">${chips.join("")}</div>
+        ${rows}
+      </div>
+    `;
   }
 
-  $$(".timeline-tab").forEach((tab) => {
-    tab.addEventListener("click", () => selectPeriod(tab.dataset.period));
-  });
+  function renderArtifact(queryId, file, artifacts) {
+    const value = artifacts[file];
+    const artifact = ARTIFACTS.find((item) => item.file === file);
+    const label = artifact ? artifact.label : file;
 
-  window.addEventListener("resize", () => {
-    window.clearTimeout(window.__chartResizeTimer);
-    window.__chartResizeTimer = window.setTimeout(() => renderChart(activePeriod, false), 130);
-  });
-
-  $("#refreshChart")?.addEventListener("click", (event) => {
-    const button = event.currentTarget;
-    button.classList.add("is-spinning");
-    renderChart(activePeriod, true);
-    showToast("Portfolio value refreshed");
-    window.setTimeout(() => button.classList.remove("is-spinning"), 650);
-  });
-
-  requestAnimationFrame(() => {
-    updatePeriodSummary(activePeriod);
-    renderChart(activePeriod, false);
-  });
-
-  /* ── Search with keyboard autocomplete ────────────────────── */
-
-  const searchShell = $("#searchShell");
-  const searchInput = $("#globalSearch");
-  const searchPopover = $("#searchPopover");
-  const searchResults = $("#searchResults");
-  const searchTitle = $("#searchPopoverTitle");
-  let searchMatches = [];
-  let highlightedIndex = 0;
-
-  function getSearchMatches(query) {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return searchData.slice(0, 6);
-    return searchData
-      .filter((item) =>
-        `${item.name} ${item.meta} ${item.typeLabel} ${item.keywords || ""}`.toLowerCase().includes(normalized),
-      )
-      .slice(0, 7);
-  }
-
-  function renderSearchResults(query = "") {
-    searchMatches = getSearchMatches(query);
-    searchTitle.textContent = query.trim() ? "Search results" : "Trending on Groww";
-    if (!searchMatches.length) {
-      searchResults.innerHTML = `
-        <div class="search-empty">
-          <strong>No matches for “${escapeHtml(query.trim())}”</strong>
-          Try a stock name, ticker, mutual fund, or ETF.
-        </div>
+    if (value === undefined) {
+      elements.traceBody.innerHTML = `
+        <p class="trace-note">${icon("alert")}This stage did not write an artifact for ${escapeHtml(label)}.</p>
+        <pre class="trace-json">Artifact not found: ${escapeHtml(file)}</pre>
       `;
       return;
     }
 
-    highlightedIndex = Math.min(highlightedIndex, searchMatches.length - 1);
-    searchResults.innerHTML = searchMatches
-      .map((item, index) => `
-        <button class="search-result ${index === highlightedIndex ? "is-highlighted" : ""}" type="button" role="option" aria-selected="${index === highlightedIndex}" data-search-id="${item.id || item.ticker}">
-          ${logoMarkup(item)}
-          <span class="search-result-copy">
-            <strong>${item.name}</strong>
-            <span>${item.meta || `${item.ticker} · ${item.exchange}`}</span>
-          </span>
-          <span class="search-result-type ${item.type}">${item.typeLabel}</span>
-          <svg class="search-result-arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7.5 4.5 5 5.5-5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    const pretty =
+      typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    const summary =
+      file === "02_retrieval.json" ? retrievalSummary(value) : "";
+
+    elements.traceBody.innerHTML = `
+      ${summary}
+      <p class="trace-json-label">${escapeHtml(file)}</p>
+      <pre class="trace-json">${escapeHtml(pretty)}</pre>
+    `;
+    elements.traceBody.scrollTop = 0;
+  }
+
+  function renderTabs(queryId, artifacts) {
+    elements.traceTabs.innerHTML = ARTIFACTS.map((artifact) => {
+      const available = artifacts[artifact.file] !== undefined;
+      return `
+        <button class="trace-tab" type="button" role="tab"
+                data-file="${escapeHtml(artifact.file)}"
+                aria-selected="false"
+                ${available ? "" : "disabled"}>
+          ${escapeHtml(artifact.label)}
         </button>
-      `)
-      .join("");
+      `;
+    }).join("");
+
+    const preferred = ARTIFACTS.find((artifact) => artifacts[artifact.file]);
+    const file = preferred ? preferred.file : ARTIFACTS[0].file;
+    selectArtifact(queryId, file, artifacts);
   }
 
-  function openSearch() {
-    renderSearchResults(searchInput.value);
-    searchPopover.hidden = false;
-    searchInput.setAttribute("aria-expanded", "true");
-  }
-
-  function closeSearch() {
-    searchPopover.hidden = true;
-    searchInput.setAttribute("aria-expanded", "false");
-  }
-
-  function chooseSearchResult(item) {
-    if (!item) return;
-    if (item.type === "stock") {
-      const instrument = instruments.find((candidate) => candidate.ticker === item.ticker);
-      if (instrument) selectInstrument(instrument);
-      showToast(`${item.ticker} loaded in Quick invest`);
-    } else {
-      showToast(item.toast || `${item.name} details opened`);
-    }
-    searchInput.value = "";
-    closeSearch();
-    searchInput.blur();
-  }
-
-  function highlightSearchResult(index) {
-    if (!searchMatches.length) return;
-    highlightedIndex = (index + searchMatches.length) % searchMatches.length;
-    const options = $$(".search-result", searchResults);
-    options.forEach((option, optionIndex) => {
-      const highlighted = optionIndex === highlightedIndex;
-      option.classList.toggle("is-highlighted", highlighted);
-      option.setAttribute("aria-selected", String(highlighted));
-      if (highlighted) option.scrollIntoView({ block: "nearest" });
+  function selectArtifact(queryId, file, artifacts) {
+    state.activeArtifact = file;
+    $$(".trace-tab", elements.traceTabs).forEach((tab) => {
+      const active = tab.dataset.file === file;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", String(active));
     });
+    renderArtifact(queryId, file, artifacts);
   }
 
-  searchInput.addEventListener("focus", openSearch);
-  searchInput.addEventListener("input", () => {
-    highlightedIndex = 0;
-    openSearch();
+  async function openTrace(queryId) {
+    if (!queryId) {
+      showToast("Ask a question first");
+      return;
+    }
+
+    state.activeTraceQueryId = queryId;
+    state.lastFocused = document.activeElement;
+    elements.traceDrawer.inert = false;
+    elements.traceDrawer.classList.add("is-open");
+    elements.traceDrawer.setAttribute("aria-hidden", "false");
+    elements.scrim.classList.add("is-open");
+    elements.traceClose.focus();
+    closeSidebar();
+
+    elements.traceMeta.innerHTML = artifactChip(shortQueryId(queryId), "is-ok");
+    elements.traceTabs.innerHTML = "";
+    elements.traceBody.innerHTML = `
+      <div class="typing" role="status" aria-label="Loading artifacts">
+        <span></span><span></span><span></span>
+      </div>
+    `;
+
+    try {
+      const artifacts = await loadArtifacts(queryId);
+      const responseArtifact = artifacts["05_response.json"];
+      const status =
+        responseArtifact && typeof responseArtifact === "object"
+          ? responseArtifact.status
+          : null;
+      renderMeta(queryId, status, artifacts);
+      renderTabs(queryId, artifacts);
+    } catch (error) {
+      elements.traceMeta.innerHTML = artifactChip(shortQueryId(queryId), "is-ok");
+      elements.traceBody.innerHTML = `
+        <p class="trace-note">${icon("alert")}Couldn't load the artifacts for this query.</p>
+        <pre class="trace-json">${escapeHtml(error.message || "Unknown error")}</pre>
+      `;
+    }
+  }
+
+  function closeTrace() {
+    if (!elements.traceDrawer.classList.contains("is-open")) return;
+    elements.traceDrawer.classList.remove("is-open");
+    elements.traceDrawer.setAttribute("aria-hidden", "true");
+    elements.traceDrawer.inert = true;
+    elements.scrim.classList.remove("is-open");
+    if (state.lastFocused && typeof state.lastFocused.focus === "function") {
+      state.lastFocused.focus();
+    }
+  }
+
+  /* ── Sidebar ────────────────────────────────────────────────── */
+
+  function openSidebar() {
+    elements.sidebar.classList.add("is-open");
+    elements.scrim.classList.add("is-open");
+    elements.menuBtn.setAttribute("aria-expanded", "true");
+  }
+
+  function closeSidebar() {
+    if (!elements.sidebar.classList.contains("is-open")) return;
+    elements.sidebar.classList.remove("is-open");
+    elements.menuBtn.setAttribute("aria-expanded", "false");
+    if (!elements.traceDrawer.classList.contains("is-open")) {
+      elements.scrim.classList.remove("is-open");
+    }
+  }
+
+  function toggleSidebar() {
+    if (elements.sidebar.classList.contains("is-open")) closeSidebar();
+    else openSidebar();
+  }
+
+  /* ── Copy ───────────────────────────────────────────────────── */
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Answer copied");
+    } catch (_error) {
+      const scratch = document.createElement("textarea");
+      scratch.value = text;
+      scratch.setAttribute("readonly", "");
+      scratch.style.position = "fixed";
+      scratch.style.opacity = "0";
+      document.body.append(scratch);
+      scratch.select();
+      try {
+        document.execCommand("copy");
+        showToast("Answer copied");
+      } catch (_fallbackError) {
+        showToast("Copy isn't available in this browser");
+      } finally {
+        scratch.remove();
+      }
+    }
+  }
+
+  function copyTurn(turn) {
+    const answer = $(".answer-text", turn);
+    if (!answer) return;
+
+    const lines = [answer.textContent.trim()];
+    const citation = $(".citation-card", turn);
+    if (citation) {
+      const title = $(".citation-copy strong", citation);
+      const url = $(".citation-url", citation);
+      if (title) lines.push(`Source: ${title.textContent.trim()}`);
+      if (url) lines.push(url.textContent.trim());
+    }
+    const updated = $(".last-updated time", turn);
+    if (updated) {
+      lines.push(`Last updated from sources: ${updated.textContent.trim()}`);
+    }
+    void copyText(lines.join("\n"));
+  }
+
+  /* ── New chat ───────────────────────────────────────────────── */
+
+  function newChat() {
+    state.requestId += 1;
+    state.latestQueryId = null;
+    state.latestStatus = null;
+    state.activeTraceQueryId = null;
+    state.activeArtifact = null;
+    setBusy(false);
+    elements.traceToggle.disabled = true;
+    elements.messages.innerHTML = "";
+    elements.welcome.hidden = false;
+    elements.queryInput.value = "";
+    autoGrow();
+    closeTrace();
+    closeSidebar();
+    elements.queryInput.focus();
+    scrollToLatest();
+    showToast("New chat started");
+  }
+
+  /* ── Event wiring ───────────────────────────────────────────── */
+
+  elements.menuBtn.addEventListener("click", toggleSidebar);
+  elements.sidebarClose.addEventListener("click", closeSidebar);
+  elements.scrim.addEventListener("click", () => {
+    closeTrace();
+    closeSidebar();
   });
 
-  searchResults.addEventListener("click", (event) => {
-    const option = event.target.closest(".search-result");
-    if (!option) return;
-    const item = searchData.find((candidate) => (candidate.id || candidate.ticker) === option.dataset.searchId);
-    chooseSearchResult(item);
+  elements.newChatBtn.addEventListener("click", newChat);
+  elements.traceToggle.addEventListener("click", () => openTrace(state.latestQueryId));
+  elements.traceClose.addEventListener("click", closeTrace);
+
+  elements.traceTabs.addEventListener("click", (event) => {
+    const tab = event.target.closest(".trace-tab");
+    if (!tab || tab.disabled) return;
+    const queryId = state.activeTraceQueryId;
+    const artifacts = state.artifacts.get(queryId);
+    if (!artifacts) return;
+    selectArtifact(queryId, tab.dataset.file, artifacts);
   });
 
-  searchResults.addEventListener("pointermove", (event) => {
-    const option = event.target.closest(".search-result");
-    if (!option) return;
-    const index = $$(".search-result", searchResults).indexOf(option);
-    if (index >= 0 && index !== highlightedIndex) highlightSearchResult(index);
+  elements.queryForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submitQuery(elements.queryInput.value);
+  });
+
+  elements.queryInput.addEventListener("input", autoGrow);
+  elements.queryInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      if (!elements.sendBtn.disabled) {
+        elements.queryForm.requestSubmit();
+      }
+    }
+  });
+
+  elements.messages.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const request = button.closest(".turn");
+
+    if (button.dataset.action === "copy") {
+      copyTurn(request);
+    } else if (button.dataset.action === "trace") {
+      void openTrace(button.dataset.queryId || state.activeTraceQueryId);
+    } else if (button.dataset.action === "retry") {
+      const lastQuery = $$(".user-bubble", elements.messages).at(-1);
+      if (lastQuery) void submitQuery(lastQuery.textContent);
+    }
+  });
+
+  $$("[data-question]").forEach((button) => {
+    button.addEventListener("click", () => {
+      elements.queryInput.value = button.dataset.question || "";
+      autoGrow();
+      if (window.matchMedia("(max-width: 1080px)").matches) closeSidebar();
+      void submitQuery(elements.queryInput.value);
+    });
   });
 
   document.addEventListener("keydown", (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-      event.preventDefault();
-      searchInput.focus();
-      searchInput.select();
-      openSearch();
-      return;
-    }
-
-    if (searchPopover.hidden) return;
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      highlightSearchResult(highlightedIndex + 1);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      highlightSearchResult(highlightedIndex - 1);
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      chooseSearchResult(searchMatches[highlightedIndex]);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      closeSearch();
-      searchInput.blur();
+    if (event.key !== "Escape") return;
+    if (elements.traceDrawer.classList.contains("is-open")) {
+      closeTrace();
+    } else if (elements.sidebar.classList.contains("is-open")) {
+      closeSidebar();
     }
   });
 
-  /* ── Popovers ─────────────────────────────────────────────── */
-
-  function closeAllPopovers(except) {
-    [
-      ["#notificationsPopover", "#notificationsBtn"],
-      ["#profilePopover", "#profileBtn"],
-    ].forEach(([popoverSelector, buttonSelector]) => {
-      const popover = $(popoverSelector);
-      const button = $(buttonSelector);
-      if (!popover || popover === except) return;
-      popover.hidden = true;
-      button?.setAttribute("aria-expanded", "false");
-    });
-  }
-
-  $("#notificationsBtn")?.addEventListener("click", () => {
-    const popover = $("#notificationsPopover");
-    const willOpen = popover.hidden;
-    closeAllPopovers(popover);
-    popover.hidden = !willOpen;
-    $("#notificationsBtn").setAttribute("aria-expanded", String(willOpen));
-  });
-
-  $("#profileBtn")?.addEventListener("click", () => {
-    const popover = $("#profilePopover");
-    const willOpen = popover.hidden;
-    closeAllPopovers(popover);
-    popover.hidden = !willOpen;
-    $("#profileBtn").setAttribute("aria-expanded", String(willOpen));
-  });
-
-  $("#walletChip")?.addEventListener("click", () => {
-    closeAllPopovers();
-    showToast("Add funds flow opened · Wallet balance ₹12,450");
-  });
-
-  document.addEventListener("pointerdown", (event) => {
-    if (!event.target.closest(".popover-anchor")) closeAllPopovers();
-    if (!event.target.closest("#searchShell")) closeSearch();
-  });
-
-  /* ── Order ticket ─────────────────────────────────────────── */
-
-  const stockPicker = $("#stockPicker");
-  const stockMenu = $("#stockMenu");
-  const limitPriceInput = $("#limitPrice");
-  const quantityInput = $("#quantity");
-  const estimatedAmount = $("#estimatedAmount");
-  const placeOrder = $("#placeOrder");
-  const placeOrderLabel = $("#placeOrderLabel");
-  const productBadge = $("#productBadge");
-  let selectedInstrument = instruments[0];
-  let tradeSide = "buy";
-  let orderMode = "intraday";
-  let orderSuccessTimer = null;
-
-  function renderStockMenu() {
-    if (!stockMenu) return;
-    stockMenu.innerHTML = instruments
-      .map(
-        (item) => `
-          <button class="stock-menu-option" type="button" role="option" data-ticker="${item.ticker}" aria-selected="${item.ticker === selectedInstrument.ticker}">
-            ${logoMarkup(item)}
-            <div>
-              <strong>${item.ticker}</strong>
-              <span>${item.name} · NSE</span>
-            </div>
-            <span class="menu-price">${money(item.price)}</span>
-          </button>
-        `,
-      )
-      .join("");
-  }
-
-  function updateOrderButton() {
-    const quantity = Math.max(0, Number(quantityInput.value) || 0);
-    placeOrderLabel.textContent = `${tradeSide === "buy" ? "Buy" : "Sell"} ${selectedInstrument.ticker}${quantity ? ` · ${quantity}` : ""}`;
-    placeOrder.classList.toggle("is-sell", tradeSide === "sell");
-  }
-
-  function updateEstimate() {
-    const price = Math.max(0, Number(limitPriceInput.value) || 0);
-    const quantity = Math.max(0, Math.floor(Number(quantityInput.value) || 0));
-    estimatedAmount.textContent = money(price * quantity);
-    updateOrderButton();
-  }
-
-  function selectInstrument(item) {
-    selectedInstrument = item;
-    const logo = $("#selectedLogo");
-    logo.className = `company-logo ${item.logoClass}`;
-    logo.textContent = item.logoText;
-    $("#selectedTicker").textContent = item.ticker;
-    $("#selectedName").textContent = item.name;
-    $("#selectedPrice").textContent = money(item.price);
-    const change = $("#selectedChange");
-    change.textContent = signedPercent(item.change);
-    change.className = item.change >= 0 ? "positive-text" : "negative-text";
-    limitPriceInput.value = item.price.toFixed(2);
-    updateEstimate();
-    renderStockMenu();
-    closeStockMenu();
-  }
-
-  function openStockMenu() {
-    stockMenu.hidden = false;
-    stockPicker.setAttribute("aria-expanded", "true");
-  }
-
-  function closeStockMenu() {
-    stockMenu.hidden = true;
-    stockPicker.setAttribute("aria-expanded", "false");
-  }
-
-  stockPicker?.addEventListener("click", () => {
-    if (stockMenu.hidden) openStockMenu();
-    else closeStockMenu();
-  });
-
-  stockMenu?.addEventListener("click", (event) => {
-    const option = event.target.closest(".stock-menu-option");
-    if (!option) return;
-    const instrument = instruments.find((item) => item.ticker === option.dataset.ticker);
-    if (instrument) {
-      selectInstrument(instrument);
-      showToast(`${instrument.ticker} selected`);
+  // Focus management for the drawer.
+  elements.traceDrawer.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const focusable = $$(
+      'button:not([disabled]), a[href], textarea, [tabindex]:not([tabindex="-1"])',
+      elements.traceDrawer,
+    ).filter((node) => node.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   });
 
-  $$(".trade-side .segment").forEach((segment) => {
-    segment.addEventListener("click", () => {
-      tradeSide = segment.dataset.side;
-      $$(".trade-side .segment").forEach((candidate) => {
-        const active = candidate === segment;
-        candidate.classList.toggle("is-active", active);
-        candidate.setAttribute("aria-selected", String(active));
-      });
-      updateOrderButton();
-    });
-  });
-
-  $$(".mode-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      orderMode = tab.dataset.mode;
-      $$(".mode-tab").forEach((candidate) => {
-        const active = candidate === tab;
-        candidate.classList.toggle("is-active", active);
-        candidate.setAttribute("aria-selected", String(active));
-      });
-      productBadge.textContent = orderMode === "intraday" ? "MIS" : "CNC";
-    });
-  });
-
-  [limitPriceInput, quantityInput].forEach((input) => {
-    input?.addEventListener("input", updateEstimate);
-    input?.addEventListener("blur", () => {
-      if (input === quantityInput) {
-        input.value = String(Math.max(1, Math.floor(Number(input.value) || 1)));
-        updateEstimate();
-      }
-    });
-  });
-
-  placeOrder?.addEventListener("click", () => {
-    const price = Number(limitPriceInput.value);
-    const quantity = Math.floor(Number(quantityInput.value));
-    if (!price || price <= 0 || !quantity || quantity <= 0) {
-      showToast("Enter a valid limit price and quantity");
-      return;
-    }
-
-    window.clearTimeout(orderSuccessTimer);
-    placeOrder.classList.add("is-success");
-    placeOrderLabel.textContent = `${tradeSide === "buy" ? "Buy" : "Sell"} order placed · ${quantity} ${selectedInstrument.ticker}`;
-    showToast(
-      `${tradeSide === "buy" ? "Buy" : "Sell"} order placed for ${quantity} ${selectedInstrument.ticker} at ${money(price)} (simulated)`,
-    );
-    orderSuccessTimer = window.setTimeout(() => {
-      placeOrder.classList.remove("is-success");
-      updateOrderButton();
-    }, 2600);
-  });
-
-  renderStockMenu();
-  selectInstrument(instruments[0]);
-  updateEstimate();
-
-  /* ── SIP toggles ──────────────────────────────────────────── */
-
-  function updateSipSummary() {
-    const items = $$(".sip-item");
-    let activeCount = 0;
-    let total = 0;
-    items.forEach((item) => {
-      const toggle = $('input[type="checkbox"]', item);
-      if (toggle?.checked) {
-        activeCount += 1;
-        total += Number(item.dataset.amount);
-      }
-    });
-    const label = `${activeCount} auto-debit${activeCount === 1 ? "" : "s"}`;
-    $("#sipSummaryText").innerHTML = `<strong>${label}</strong> · ${money(total, 0)} due this week`;
-  }
-
-  $$(".sip-item").forEach((item) => {
-    const toggle = $('input[type="checkbox"]', item);
-    const status = $(".auto-status", item);
-    toggle?.addEventListener("change", () => {
-      const fundName = $(".sip-info strong", item).textContent;
-      if (toggle.checked) {
-        status.textContent = "Auto-debit on";
-        status.classList.remove("is-paused");
-        showToast(`Auto-debit turned on for ${fundName}`);
-      } else {
-        status.textContent = "Auto-debit paused";
-        status.classList.add("is-paused");
-        showToast(`Auto-debit paused for ${fundName}`);
-      }
-      updateSipSummary();
-    });
-  });
-
-  $("#manageSips")?.addEventListener("click", () => showToast("SIP management opened"));
-
-  /* ── Navigation, links, toast ─────────────────────────────── */
-
-  $$(".nav-link").forEach((link) => {
-    link.addEventListener("click", () => {
-      $$(".nav-link").forEach((candidate) => {
-        const active = candidate === link;
-        candidate.classList.toggle("is-active", active);
-        if (active) candidate.setAttribute("aria-current", "page");
-        else candidate.removeAttribute("aria-current");
-      });
-
-      const target = link.dataset.scrollTarget;
-      if (target === "top") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
-  });
-
-  document.addEventListener("click", (event) => {
-    const trigger = event.target.closest("[data-toast]");
-    if (!trigger) return;
-    showToast(trigger.dataset.toast);
-  });
-
-  let toastTimer = null;
-  function showToast(message) {
-    const toast = $("#toast");
-    if (!toast) return;
-    $("#toastText").textContent = message;
-    toast.classList.add("is-visible");
-    window.clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2800);
-  }
-
-  function escapeHtml(value) {
-    return value.replace(/[&<>"']/g, (character) => {
-      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
-      return entities[character];
-    });
-  }
-
-  /* ── Keep the initial view sharp on font load ─────────────── */
-
-  if (document.fonts?.ready) {
-    document.fonts.ready.then(() => {
-      refreshVisibleCarousels();
-      renderChart(activePeriod, false);
-    });
-  }
+  autoGrow();
+  elements.traceDrawer.inert = true;
+  void loadHealth();
 })();

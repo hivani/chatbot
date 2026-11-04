@@ -2,8 +2,8 @@
 
 **Product:** Growchatbot
 **Derived from:** [`prd.md`](./prd.md)
-**Status:** Draft
-**Date:** 2026-11-01
+**Status:** Implemented v1
+**Date:** 2026-11-03
 
 ---
 
@@ -14,6 +14,24 @@ This document describes how the Groww Mutual Fund FAQ Assistant is built: the co
 The system is a **small-corpus, facts-only RAG prototype** over 15–25 official public URLs (Groww AMC/scheme pages plus official Groww help, AMFI, and SEBI pages). It answers questions about expense ratio, exit load, minimum SIP, ELSS lock-in, riskometer, benchmark, and statement downloads. It refuses investment advice, performance comparisons, and PII.
 
 The design is optimized for **inspectability**, not scale: every stage writes a durable artifact that the UI can display for any query.
+
+### 1.1 UI design source of truth
+
+The canonical UI design is the Stitch export at
+`stitch_fintech_ai_chatbot_interface.zip` (the “Fintech AI Terminal” screen).
+It contains `DESIGN.md` (tokens, typography, component notes), `code.html`
+(static reference rendering), and `screen.png` (reference screenshot). The zip
+is the **single source of truth** for layout, visual hierarchy, component
+patterns, and design tokens; `doc/stitch/DESIGN.md` is a readable copy and the
+zip wins if they differ.
+
+The production UI is implemented in `index.html`, `styles.css`, and `app.js`
+and served by FastAPI at `/`. It preserves the Stitch dark terminal layout while
+mapping the accent to Groww green (`#00B386`) and enforcing Growchatbot's
+facts-only answer contract. The Streamlit app remains a secondary reference
+surface with the same chat and inspector behavior. There is no live Stitch MCP
+connector in this runtime, so a new Stitch export is applied by replacing the
+zip and updating the three UI files.
 
 ---
 
@@ -28,6 +46,7 @@ The design is optimized for **inspectability**, not scale: every stage writes a 
 | P5 | **Config-driven, secrets isolated** | Tunables live in `config.yaml`; API keys live only in `.env`. Swapping embedding model, provider, or top-k requires no code change. |
 | P6 | **Ingest and query share one embedding space** | The same model name, normalization, and Chroma collection are used on both sides, loaded from the same config. |
 | P7 | **No PII anywhere** | PII is detected at the edge, refused, and never written to logs, artifacts, Chroma, or prompts. |
+| P8 | **One UI design source** | The Stitch export is the reference for layout and tokens; the checked-in `index.html` / `styles.css` / `app.js` is the only shipping UI implementation. |
 
 ---
 
@@ -35,8 +54,10 @@ The design is optimized for **inspectability**, not scale: every stage writes a 
 
 ```mermaid
 flowchart LR
-    U[Retail user / support team] -->|question| UI[Chat UI<br/>Streamlit]
-    UI --> API[Application service<br/>FastAPI or in-process]
+    U[Retail user / support team] -->|question| WEB[Web UI<br/>Stitch-derived<br/>index.html + app.js]
+    U -->|question| ST[Streamlit reference UI]
+    WEB --> API[Application service<br/>FastAPI or in-process]
+    ST --> API
     API --> G[Guardrail layer]
     API --> R[RAG orchestrator]
     R --> RET[Retriever]
@@ -62,7 +83,7 @@ flowchart LR
 - `sentence-transformers/all-MiniLM-L6-v2` (local embedding model).
 - ChromaDB (embedded/persistent client).
 - Groq chat-completions API (LLM).
-- Optional: FastAPI + Uvicorn if the demo is served as an app rather than a notebook.
+- FastAPI + Uvicorn for the web UI and JSON API; Streamlit for the reference surface.
 
 ---
 
@@ -71,10 +92,12 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph Presentation
-        UI[Streamlit app<br/>chat + artifact viewer]
+        WEB[Stitch web UI<br/>chat + RAG drawer]
+        ST[Streamlit reference<br/>chat + inspector]
     end
 
     subgraph Application
+        API[FastAPI<br/>/query /health /artifacts]
         ORCH[Query orchestrator]
         GRD[Guardrail service]
         CITE[Citation + answer validator]
@@ -101,7 +124,10 @@ flowchart TB
         SOURCES[data/sources.csv]
     end
 
-    UI --> ORCH
+    WEB --> API
+    API --> ORCH
+    ST --> ORCH
+
     ORCH --> GRD
     ORCH --> RETRIEVER
     ORCH --> GEN
@@ -125,6 +151,9 @@ flowchart TB
 
 | Component | Responsibility | Must not |
 | --- | --- | --- |
+| `web ui` | Render the Stitch-derived chat, answer/refusal cards, citation, timestamp, and six-artifact RAG drawer; call `/query`, `/health`, `/artifacts/{query_id}` | Collect PII, link accounts, persist query history, or re-run retrieval in the browser |
+| `streamlit ui` | Provide a secondary reference surface with the same answer contract and six-tab inspector | Drift from the contract or show stale artifacts |
+| `api` | Serve `index.html` / `styles.css` / `app.js` and expose `/query`, `/health`, `/artifacts/{query_id}` | Expose raw PII or artifacts outside a valid `query_id` |
 | `loader` | Fetch each URL in the source list, extract main content, normalize whitespace, record URL + title + scrape timestamp + content type | Follow third-party/blog links, scrape private endpoints |
 | `chunker` | Split documents by content type: heading-aware sections for prose, row/section-preserving chunks for scheme tables | Split a fact from its scheme name or source URL |
 | `embedder` | Encode chunks and queries with the configured sentence-transformer model | Change model/normalization between ingest and query |
@@ -143,11 +172,23 @@ flowchart TB
 Growchatbot/
 ├── prd.md
 ├── architecture.md
+├── implementation.md
 ├── README.md
 ├── config.yaml                  # tunables (models, top-k, chunking, paths)
 ├── .env.example                 # key names only, no secrets
 ├── .env                         # GROQ_API_KEY=... (git-ignored)
-├── requirements.txt
+├── requirements.txt             # slim Vercel runtime
+├── requirements-local.txt       # Streamlit + Chroma + torch + pytest
+├── index.html                   # Stitch-derived web UI shell
+├── styles.css                   # dark Groww/Stitch design tokens
+├── app.js                       # chat, health, and RAG drawer behavior
+├── app.py                       # Vercel FastAPI entrypoint
+├── vercel.json                  # function duration config
+├── assets/fonts/inter-latin.woff2
+├── stitch_fintech_ai_chatbot_interface.zip  # canonical Stitch UI export
+├── doc/stitch/
+│   ├── DESIGN.md                # readable copy of the Stitch tokens
+│   └── README.md                # provenance + re-sync steps
 ├── data/
 │   ├── sources.csv              # deliverable: 15–25 official URLs
 │   ├── raw/                     # stage 1 output: <doc_id>.json
@@ -171,6 +212,7 @@ Growchatbot/
 │   ├── rag/
 │   │   ├── embedder.py
 │   │   ├── store.py             # Chroma adapter
+│   │   ├── lexical.py           # dependency-free BM25 serverless retriever
 │   │   ├── retriever.py
 │   │   ├── prompts.py           # system prompt + context formatter + templates
 │   │   ├── generator.py         # provider adapters (Groq v1; stubs for others)
@@ -182,8 +224,8 @@ Growchatbot/
 │   │   └── orchestrator.py
 │   ├── artifacts.py             # artifact writer/reader (query_id scoped)
 │   └── app/
-│       ├── api.py               # FastAPI endpoints (optional surface)
-│       └── streamlit_app.py     # chat + artifact viewer
+│       ├── api.py               # FastAPI endpoints + static UI routes
+│       └── streamlit_app.py     # secondary chat + inspector surface
 ├── eval/
 │   ├── sample_qa.md             # deliverable: 5–10 Q&A with links
 │   └── run_eval.py              # success-criteria checks
@@ -501,24 +543,64 @@ On failure, return `status: "insufficient_context"` with the closest official pa
 
 ## 8. Application surfaces
 
-### 8.1 Streamlit UI (default demo surface)
+### 8.1 Stitch web UI (primary surface)
 
-- Welcome line, three example questions, persistent disclaimer `Facts-only. No investment advice.`
-- Chat input and answer card: answer, one citation link, `Last updated from sources: <timestamp>`.
-- Sidebar or expander: **RAG inspector** — loaded docs, chunks for the cited doc, top-k retrieved chunks with scores, exact prompt, raw completion, validation results.
-- Refusal cards use the same layout minus facts, with an educational link.
-- No PII fields, no account linking, no analytics that capture query text.
+The primary UI is the Stitch-derived single-page app served by FastAPI at `/`.
+The design source of truth is
+`stitch_fintech_ai_chatbot_interface.zip`; the implementation is split across:
 
-### 8.2 FastAPI (optional surface)
+| File | Responsibility |
+| --- | --- |
+| `index.html` | App shell, sidebar, welcome state, composer, message region, RAG drawer |
+| `styles.css` | Dark Groww/Stitch design system: tokens, layout, cards, drawer, responsive rules |
+| `app.js` | Query submission, answer/refusal rendering, citation/timestamp, health, artifact tabs, copy/toasts, drawer and sidebar controls |
+
+**Layout and behavior**
+
+- Dark “Fintech AI Terminal” shell adapted from the Stitch export, using Groww
+  green `#00B386` as the accent.
+- Sidebar: brand, example questions, how-it-works steps, index status (passage
+  count, retriever mode, writer), persistent `Facts-only. No investment advice.`
+  note, and privacy line.
+- Welcome state: four example cards, privacy note, and a persistent composer.
+- Answer card: safe answer text, exactly one official citation link,
+  `Last updated from sources: <timestamp>` for answered queries, validation
+  chips, and the `query_id`.
+- Refusal card: same layout without facts or a timestamp, with the official
+  education link and a human-readable reason.
+- **RAG inspector** drawer: six tabs read from `/artifacts/{query_id}` —
+  request, guardrails, retrieval (with ranked passages and scores), prompt,
+  completion, response. It never re-runs retrieval in the browser.
+- Copy button, new-chat reset, health badge, mobile sidebar, focus-trapped
+  drawer, and toast feedback.
+- Client state is in-memory only: no cookies, `localStorage`, account linking,
+  or query analytics.
+
+### 8.2 Streamlit UI (reference surface)
+
+`src/app/streamlit_app.py` remains a secondary/local surface for review:
+
+- Three example questions, chat input, answer/refusal cards, one citation, and
+  the last-updated timestamp.
+- Six-tab inspector read from disk.
+- Same disclaimer and PII note as the web UI.
+- No PII fields, account linking, or query analytics.
+
+It is documented as the reference implementation, not the deployed default.
+
+### 8.3 FastAPI
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| `GET` | `/` | Static Stitch web UI (`index.html`) |
+| `GET` | `/styles.css`, `/app.js`, `/assets/*` | UI assets |
 | `POST` | `/query` | Body `{ "query": "..." }` → answer envelope (§6.6) |
-| `GET` | `/health` | Liveness + Chroma count + model name |
-| `POST` | `/ingest` | Admin-only; runs the offline pipeline (disabled by default in the demo) |
-| `GET` | `/artifacts/{query_id}` | Returns stage artifact list and contents for the inspector |
+| `GET` | `/health` | Liveness + index count + retriever mode + provider |
+| `GET` | `/artifacts/{query_id}` | Six stage artifacts for the inspector |
 
-The Streamlit app may call the orchestrator in-process or via `/query`; both use the same code path.
+Both UIs use the same orchestrator and answer contract. The web UI calls the API
+over HTTP; Streamlit calls the orchestrator in-process. There is no public
+ingest endpoint in the demo.
 
 ---
 
@@ -626,7 +708,9 @@ MISTRAL_API_KEY=
 
 ## 12. Observability and the RAG inspector
 
-Each query gets a `query_id` and an artifact directory. The inspector reads these files and renders:
+Each query gets a `query_id` and an artifact directory. Both UIs read these
+files (the web UI through `GET /artifacts/{query_id}`, Streamlit directly from
+disk) and render:
 
 1. **Request** — redacted query, timestamp, config snapshot hash.
 2. **Guardrails** — PII/intent decision and reason code.
@@ -668,19 +752,33 @@ This directly satisfies the success criterion that a reviewer can inspect **load
 
 ## 14. Deployment and runbook
 
-**Local demo (default):**
+**Local demo (primary web UI):**
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-local.txt
 cp .env.example .env          # add GROQ_API_KEY and GROQ_MODEL
 python -m src.ingest.pipeline # load → chunk → embed → upsert
+uvicorn src.app.api:app --reload
+# open http://127.0.0.1:8000/
+```
+
+The Streamlit reference surface runs in a second terminal:
+
+```bash
 streamlit run src/app/streamlit_app.py
 ```
 
-**Optional hosted demo:** FastAPI + Uvicorn, with Chroma persisted on a mounted volume and the embedding model cached in the image. If hosting is not possible, record the ≤ 3-minute demo video described in the PRD.
+**Vercel (hosted web UI):** `app.py` re-exports the FastAPI app. Vercel installs
+the slim `requirements.txt` / `pyproject.toml` dependencies, excludes
+torch/transformers/Chroma, and uses the committed
+`data/chunks/chunks.jsonl` BM25 retriever. Artifacts and caches are written
+under `/tmp/growchatbot`; the bundled corpus is copied to `/tmp` on cold start.
+Set `GROQ_API_KEY` and `GROQ_MODEL` in the project environment.
 
-**Startup checks:** config valid, `.env` key present, Chroma collection non-empty, embedding model in manifest matches config. Any failure stops the app with an actionable message.
+**Startup checks:** config valid, `.env` key present, retriever non-empty. The
+web shell and `/health` still serve when the index is not ready, and the
+sidebar status shows the degraded state instead of crashing the page.
 
 ---
 
@@ -696,7 +794,8 @@ streamlit run src/app/streamlit_app.py
 | Intent handling | Rules first, LLM classifier only for ambiguity | Deterministic refusals, low latency, easy to test |
 | LLM | Groq + Qwen from `.env` | Fast and cheap for a demo; provider abstraction keeps swaps config-only |
 | Artifacts | JSON/JSONL + text files per query | Human-inspectable, no extra infra; adequate for a prototype |
-| UI | Streamlit | Fastest path to chat + artifact viewer; FastAPI kept optional |
+| UI | Stitch-derived static web UI served by FastAPI; Streamlit kept as reference | Preserves the exported design as the product surface while keeping a low-friction local fallback |
+| Serverless retrieval | BM25 over committed `chunks.jsonl` on Vercel | Keeps the function bundle under the size limit; local runs still use Chroma + MiniLM |
 
 ---
 
@@ -727,7 +826,7 @@ streamlit run src/app/streamlit_app.py
 
 ## 18. Open items carried from the PRD
 
-1. Confirm the exact Groq Qwen model id for `.env` (the problem statement's id may not exist in Groq's catalog).
+1. Groq model id is pinned in `.env` as `qwen/qwen3.8-27b`; revisit if Groq retires it.
 2. Finalize the 10–20 extra official URLs (Groww help, factsheets, AMFI/SEBI) to reach 15–25 sources.
-3. Confirm the demo surface: local Streamlit, FastAPI, notebook, or video.
+3. Demo surface confirmed: Stitch-derived web UI served by FastAPI is primary; Streamlit is the local reference.
 4. Confirm chunking parameters after inspecting the real page structure (tables vs narrative).

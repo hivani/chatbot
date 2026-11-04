@@ -18,6 +18,42 @@ Build order:
 
 ---
 
+## 0. UI design source of truth (Stitch)
+
+The canonical UI design is `stitch_fintech_ai_chatbot_interface.zip` at the
+repository root. It is the Stitch export for the “Fintech AI Terminal” screen:
+
+| Export file | Use in this repo |
+| --- | --- |
+| `DESIGN.md` | Design tokens, typography, spacing, component intent. Readable copy at `doc/stitch/DESIGN.md`. |
+| `code.html` | Static visual reference for layout and hierarchy. Not served. |
+| `screen.png` | Reference screenshot for visual QA. |
+
+**Implementation mapping**
+
+| Stitch intent | Production file |
+| --- | --- |
+| Dark terminal shell, sidebar, composer, cards | `index.html` + `styles.css` |
+| Chat behavior, health status, artifact drawer | `app.js` |
+| FastAPI serving and JSON contract | `src/app/api.py`, `app.py` |
+
+Rules:
+
+1. The zip is the source of truth for design; if `doc/stitch/DESIGN.md`
+   differs, the zip wins.
+2. Map the Stitch accent (`#00D09C`) to Groww green (`#00B386`). Do not add
+   secondary palette colors beyond the Groww/Stitch dark surfaces.
+3. Preserve the answer contract in every state: ≤ 3 sentences, exactly one
+   official citation, `Last updated from sources: <timestamp>` when answered,
+   and the persistent `Facts-only. No investment advice.` disclaimer.
+4. No PII collection, account linking, cookies, `localStorage`, or query
+   analytics in the UI.
+5. There is no live Stitch MCP connector in this runtime. To adopt a new export,
+   replace the zip, re-read `DESIGN.md`, and update the three UI files; then
+   refresh `doc/stitch/DESIGN.md` and this section.
+
+---
+
 ## 1. Create the directory
 
 ### 1.1 Folder structure
@@ -27,7 +63,18 @@ Growchatbot/
 ├── config.yaml
 ├── .env.example
 ├── requirements.txt
+├── requirements-local.txt
 ├── .gitignore
+├── index.html               # Stitch-derived UI shell
+├── styles.css               # dark Groww/Stitch design tokens
+├── app.js                   # chat, health, RAG drawer
+├── app.py                   # Vercel entrypoint
+├── vercel.json
+├── assets/fonts/inter-latin.woff2
+├── stitch_fintech_ai_chatbot_interface.zip   # canonical Stitch export
+├── doc/stitch/
+│   ├── DESIGN.md
+│   └── README.md
 ├── data/
 │   ├── sources.csv          # 15–25 official URLs
 │   ├── raw/                 # scraped docs
@@ -45,6 +92,7 @@ Growchatbot/
 │   ├── rag/
 │   │   ├── embedder.py
 │   │   ├── store.py
+│   │   ├── lexical.py
 │   │   ├── retriever.py
 │   │   ├── prompts.py
 │   │   ├── generator.py
@@ -68,8 +116,10 @@ Growchatbot/
     ├── test_embedder.py
     ├── test_store.py
     ├── test_retriever.py
+    ├── test_lexical.py
     ├── test_guardrails.py
     ├── test_validator.py
+    ├── test_api.py
     └── test_orchestrator.py
 ```
 
@@ -468,24 +518,70 @@ artifacts/<query_id>/
 
 Statuses: `answered`, `refused_advice`, `refused_performance`, `refused_pii`, `insufficient_context`, `error`.
 
-### 7.7 UI (Streamlit)
+### 7.7 UI (Stitch web UI, primary)
 
-- Welcome line and three example questions.
-- Persistent note: **Facts-only. No investment advice.**
-- Chat input.
-- Answer card: answer, one source link, `Last updated from sources: <timestamp>`.
-- Refusal card: safe message + one education link.
-- RAG inspector: request, guardrails, retrieved chunks with scores, prompt, completion, final response.
-- Note near input: “Don’t paste PAN, Aadhaar, account numbers, OTPs, email, or phone numbers.”
-- Read artifacts from disk; do not re-run retrieval in the UI.
+The design source is `stitch_fintech_ai_chatbot_interface.zip` (see §0). The
+production surface is a static shell in `index.html` + `styles.css` + `app.js`
+served by FastAPI at `/`. It adapts the Stitch “Fintech AI Terminal” dark
+layout and maps the accent to Groww green `#00B386`.
 
-Optional API: `POST /query`, `GET /health`, `GET /artifacts/{query_id}`.
+**Shell**
+
+- Sidebar: brand, “New chat”, five example questions, three how-it-works steps,
+  index status (`index_count`, retriever mode, writer), persistent
+  `Facts-only. No investment advice.`, and “No PII collection · No account
+  linking · No analytics”.
+- Top bar: “Ask the official sources”, official-sources pill, RAG trace button.
+- Welcome state: four example cards and a privacy note listing PAN, Aadhaar,
+  account numbers, OTPs, email, and phone numbers.
+- Composer: auto-growing textarea, Enter to send, Shift+Enter for a newline,
+  send disabled while empty or busy.
+- Persistent legal note under the composer.
+
+**Answer and refusal cards**
+
+- User turn: right-aligned bubble with a local time.
+- Assistant turn: avatar, status badge, answer text, exactly one clickable
+  official citation, `Last updated from sources: <timestamp>`, validation chips
+  (sentence count, one citation, checks), and the `query_id`.
+- Refusals (`refused_pii`, `refused_advice`, `refused_performance`,
+  `insufficient_context`, `error`) use a warning/error card, safe message, and
+  an official education link. No timestamp or facts are shown.
+- Toolbar: copy answer + source + timestamp, or open this turn's RAG trace.
+
+**RAG inspector drawer**
+
+- `GET /artifacts/{query_id}` is fetched once and cached in memory.
+- Six tabs: `00_request.json`, `01_guardrails.json`, `02_retrieval.json`,
+  `03_prompt.txt`, `04_completion.json`, `05_response.json`.
+- Retrieval tab adds a summary: model, collection, passage count, `top_k`,
+  minimum score, ranked passages with source titles, excerpts, and scores.
+- Missing stages show an explicit “artifact not found” note.
+- Drawer traps focus, closes on Escape/scrim, and restores focus to its trigger.
+
+**Status and privacy**
+
+- `GET /health` drives the sidebar: passage count, `BM25` vs `Vector`, and
+  `Groq` vs `Offline`. Failures show “API unavailable” rather than crashing.
+- No cookies, `localStorage`, account linking, or query analytics. All state is
+  in memory and is discarded on refresh or “New chat”.
+
+**Reference surface:** `src/app/streamlit_app.py` keeps the same example
+questions, disclaimer, answer/refusal cards, and six-tab inspector for local
+review. It reads artifacts directly from disk and is not the deployed default.
 
 ### 7.8 Run
 
 ```bash
-python -m src.query.orchestrator "What is the exit load on HDFC ELSS?"
+# Primary web UI
+uvicorn src.app.api:app --reload
+# open http://127.0.0.1:8000/
+
+# Reference surface
 streamlit run src/app/streamlit_app.py
+
+# CLI check
+python -m src.query.orchestrator "What is the exit load on HDFC ELSS?"
 ```
 
 **Done when:**
@@ -494,7 +590,10 @@ streamlit run src/app/streamlit_app.py
 - an advice question is refused with no recommendation;
 - a PII question is refused and the value is absent from artifacts;
 - an off-corpus question returns `insufficient_context` with an official link;
-- the inspector shows all six artifacts.
+- the web UI renders the answer, citation, timestamp, and disclaimer;
+- the RAG drawer shows all six artifacts for the latest query;
+- the sidebar reports a healthy index and the health failure state is graceful;
+- `node --check app.js` passes and the Streamlit reference still works.
 
 ---
 
@@ -611,10 +710,15 @@ python -m src.ingest.pipeline --stage all --rebuild
 # 3. query from CLI
 python -m src.query.orchestrator "What is the ELSS lock-in?"
 
-# 4. UI
+# 4. primary web UI
+uvicorn src.app.api:app --reload
+# open http://127.0.0.1:8000/
+
+# 4b. reference surface (optional)
 streamlit run src/app/streamlit_app.py
 
 # 5. tests + eval
+node --check app.js
 pytest -q
 python -m eval.run_eval
 ```
@@ -630,5 +734,11 @@ python -m eval.run_eval
 - [ ] Answers ≤ 3 sentences with `Last updated from sources:`.
 - [ ] PII, advice, and performance questions are refused safely.
 - [ ] No PII in logs, prompts, Chroma, or artifacts.
-- [ ] RAG inspector shows all six artifacts for a query.
+- [ ] `stitch_fintech_ai_chatbot_interface.zip` is documented as the UI source of truth in `architecture.md` and this guide.
+- [ ] The Stitch-derived web UI loads at `/`, uses Groww `#00B386`, and is responsive.
+- [ ] The answer card shows one citation, the timestamp, and the persistent disclaimer.
+- [ ] The RAG drawer shows all six artifacts for a query, including ranked retrieval scores.
+- [ ] The sidebar reports index health and degrades gracefully when `/health` fails.
+- [ ] The UI stores no query text in cookies, `localStorage`, or analytics.
+- [ ] `node --check app.js` passes; the Streamlit reference inspector still shows all six artifacts.
 - [ ] `README.md`, `eval/sample_qa.md`, and the UI disclaimer are present.

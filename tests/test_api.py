@@ -117,3 +117,26 @@ def test_invalid_query_id_is_rejected(tmp_path, monkeypatch):
     response = client.get("/artifacts/not-a-query-id")
 
     assert response.status_code == 404
+
+
+def test_stitch_ui_shell_is_served(client):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    body = response.text
+    assert 'id="queryForm"' in body
+    assert 'id="traceDrawer"' in body
+    assert 'src="app.js"' in body
+    assert "Facts-only. No investment advice." in body
+
+
+def test_ui_assets_are_served(client):
+    stylesheet = client.get("/styles.css")
+    script = client.get("/app.js")
+
+    assert stylesheet.status_code == 200
+    assert "--accent: #00b386" in stylesheet.text
+    assert script.status_code == 200
+    assert 'fetch("/query"' in script.text
+    assert "/artifacts/${encodeURIComponent(queryId)}" in script.text
