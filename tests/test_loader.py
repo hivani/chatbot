@@ -1,4 +1,6 @@
 import json
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -11,6 +13,8 @@ from src.ingest.loader import (
     RawDocument,
     SourceError,
     SourceSpec,
+    _extract_pdf,
+    _is_pdf_source,
     content_hash,
     extract_page,
     fetch_document,
@@ -140,6 +144,67 @@ def test_load_sources_rejects_missing_columns(tmp_path):
         load_sources(path)
 
 
+def _write_new_sources(path: Path, rows: list[str]) -> Path:
+    path.write_text(
+        "id,url,publisher,doc_type,scheme,status,note\n" + "\n".join(rows) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_load_sources_parses_new_schema(tmp_path):
+    path = _write_new_sources(
+        tmp_path / "sources.csv",
+        [
+            "hdfc-lc-regular,https://www.hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/regular,"
+            "HDFC AMC,scheme_page,large_cap,active,"
+            "HDFC Large Cap Fund Regular — HDFC AMC scheme page",
+            "sebi-investor,https://investor.sebi.gov.in/,SEBI,investor_education,"
+            "general,PATTERN_INFERRED_VERIFY,SEBI Investor Education — home",
+        ],
+    )
+
+    specs = load_sources(path)
+
+    assert [spec.id for spec in specs] == ["hdfc-lc-regular", "sebi-investor"]
+    scheme = specs[0]
+    assert scheme.title == "HDFC Large Cap Fund Regular"
+    assert scheme.category == "scheme"
+    assert scheme.publisher == "HDFC AMC"
+    assert scheme.doc_type == "scheme_page"
+    assert scheme.scheme == "large_cap"
+    assert scheme.status == "active"
+    assert "HDFC Large Cap" in scheme.aliases
+    assert specs[1].category == "education"
+    assert specs[1].status == "PATTERN_INFERRED_VERIFY"
+
+
+def test_load_sources_rejects_unsupported_scheme(tmp_path):
+    path = _write_new_sources(
+        tmp_path / "sources.csv",
+        [
+            "bad,https://www.hdfcfund.com/page,HDFC AMC,scheme_page,"
+            "small_cap,active,Bad",
+        ],
+    )
+
+    with pytest.raises(SourceError, match="unsupported scheme"):
+        load_sources(path)
+
+
+def test_load_sources_rejects_unsupported_doc_type(tmp_path):
+    path = _write_new_sources(
+        tmp_path / "sources.csv",
+        [
+            "bad,https://www.hdfcfund.com/page,HDFC AMC,unknown,"
+            "general,active,Bad",
+        ],
+    )
+
+    with pytest.raises(SourceError, match="unsupported doc_type"):
+        load_sources(path)
+
+
 def test_validate_source_url_accepts_allowed_hosts():
     for url in (
         "https://groww.in/mutual-funds/test",
@@ -147,6 +212,10 @@ def test_validate_source_url_accepts_allowed_hosts():
         "https://www.amfiindia.com/investor-corner",
         "https://www.sebi.gov.in/page",
         "https://www.mutualfundssahihai.com/en/what-is-sip",
+        "https://www.hdfcfund.com/explore/mutual-funds/test/regular",
+        "https://hdfcfund.com/explore/mutual-funds/test/direct",
+        "https://files.hdfcfund.com/s3fs-public/others/test.pdf",
+        "https://investor.sebi.gov.in/",
     ):
         assert validate_source_url(url) == url
 
@@ -154,6 +223,11 @@ def test_validate_source_url_accepts_allowed_hosts():
 def test_validate_source_url_rejects_site_root():
     with pytest.raises(SourceError, match="site root"):
         validate_source_url("https://groww.in/")
+
+
+def test_validate_source_url_rejects_non_investor_sebi_root():
+    with pytest.raises(SourceError, match="site root"):
+        validate_source_url("https://www.sebi.gov.in/")
 
 
 # ---------------------------------------------------------------------------
@@ -348,10 +422,14 @@ class _FakeResponse:
         status_code: int = 200,
         text: str | None = None,
         url: str | None = None,
+        *,
+        content: bytes | None = None,
+        content_type: str = "text/html; charset=utf-8",
     ):
         self.status_code = status_code
-        self.headers = {"Content-Type": "text/html; charset=utf-8"}
+        self.headers = {"Content-Type": content_type}
         self.text = _fixture_html() if text is None else text
+        self.content = self.text.encode("utf-8") if content is None else content
         self.url = url
 
 
@@ -436,6 +514,124 @@ def test_fetch_document_allows_same_allowlist_redirect():
     document = fetch_document(spec, session=session, backoff=0)
 
     assert document.url == spec.url
+
+
+def test_is_pdf_source_detects_extension_and_doc_type():
+    assert _is_pdf_source(
+        SourceSpec(
+            id="pdf",
+            url="https://files.hdfcfund.com/other/file.pdf",
+            title="PDF",
+            category="scheme",
+        )
+    )
+    assert _is_pdf_source(
+        SourceSpec(
+            id="pdf",
+            url="https://www.sebi.gov.in/page",
+            title="PDF",
+            category="regulator",
+            doc_type="circular_pdf",
+        )
+    )
+    assert not _is_pdf_source(_spec())
+
+
+def test_extract_pdf_reads_pages_and_metadata(monkeypatch):
+    class FakePage:
+        def __init__(self, text: str):
+            self._text = text
+
+        def extract_text(self) -> str:
+            return self._text
+
+    class FakeReader:
+        metadata = types.SimpleNamespace(title="Fake PDF Title")
+
+        def __init__(self, stream):
+            self.pages = [FakePage("First page text"), FakePage(""), FakePage("Second page")]
+
+    monkeypatch.setitem(
+        sys.modules, "pypdf", types.SimpleNamespace(PdfReader=FakeReader)
+    )
+
+    spec = SourceSpec(
+        id="pdf",
+        url="https://files.hdfcfund.com/other/file.pdf",
+        title="PDF fallback",
+        category="scheme",
+        doc_type="presentation",
+    )
+    page = _extract_pdf(b"%PDF-1.4", spec)
+
+    assert page.page_title == "Fake PDF Title"
+    assert page.text == "First page text\nSecond page"
+    assert [block["text"] for block in page.blocks] == [
+        "First page text",
+        "Second page",
+    ]
+
+
+def test_fetch_document_extracts_listed_pdf(monkeypatch):
+    spec = SourceSpec(
+        id="pdf",
+        url="https://files.hdfcfund.com/other/file.pdf",
+        title="PDF source",
+        category="scheme",
+        doc_type="presentation",
+        publisher="HDFC AMC",
+        scheme="elss",
+        status="active",
+    )
+    session = _RecordingSession(
+        _FakeResponse(
+            url=spec.url,
+            content=b"%PDF-1.4 fake",
+            content_type="application/pdf",
+        )
+    )
+
+    monkeypatch.setattr(
+        "src.ingest.loader._extract_pdf",
+        lambda content, source: types.SimpleNamespace(
+            text="Extracted PDF text",
+            blocks=[{"kind": "paragraph", "text": "Extracted PDF text"}],
+            page_title="PDF title",
+        ),
+    )
+
+    document = fetch_document(spec, session=session, backoff=0)
+
+    assert document.content_type == "presentation"
+    assert document.text == "Extracted PDF text"
+    assert document.publisher == "HDFC AMC"
+    assert document.scheme == "elss"
+
+
+def test_fetch_document_retries_hdfc_403_with_crawler_ua():
+    class ForbiddenThenOkSession:
+        def __init__(self):
+            self.user_agents: list[str | None] = []
+
+        def get(self, url, headers=None, timeout=None):
+            self.user_agents.append((headers or {}).get("User-Agent"))
+            if len(self.user_agents) == 1:
+                return _FakeResponse(status_code=403, url=url)
+            return _FakeResponse(url=url)
+
+    spec = SourceSpec(
+        id="hdfc",
+        url="https://www.hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/regular",
+        title="HDFC Large Cap Fund Regular",
+        category="scheme",
+    )
+    session = ForbiddenThenOkSession()
+
+    document = fetch_document(spec, session=session, backoff=0)
+
+    assert len(session.user_agents) == 2
+    assert "Googlebot" in (session.user_agents[1] or "")
+    assert document.doc_id == "hdfc"
 
 
 # ---------------------------------------------------------------------------

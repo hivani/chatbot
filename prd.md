@@ -54,7 +54,7 @@ Retail users and support/content teams repeatedly ask the same scheme facts. Tod
 
 ## 5. In-scope corpus (v1)
 
-Scrape and store these **public Groww pages** (and additional official educational URLs as needed to reach 15–25 sources):
+Scrape and store these **public Groww pages** (and additional official HDFC AMC, AMFI, and SEBI URLs as needed to build a source list of at least 15; the implemented corpus has 41 sources):
 
 | # | Page | URL |
 | --- | --- | --- |
@@ -64,9 +64,9 @@ Scrape and store these **public Groww pages** (and additional official education
 | 4 | ELSS — HDFC ELSS Tax Saver Fund Direct Plan Growth | https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth |
 | 5 | Mid Cap — HDFC Mid Cap Fund Direct Growth | https://groww.in/mutual-funds/hdfc-mid-cap-fund-direct-growth |
 
-**Allowed extra sources (public only):** official Groww help/education pages, AMC factsheets linked from these pages, SEBI/AMFI public pages needed for lock-in, statements, or “what is riskometer” type facts.
+**Allowed extra sources (public only):** official Groww help/education pages, HDFC AMC scheme/product pages and explicitly listed PDFs, SEBI/AMFI public pages needed for lock-in, statements, or “what is riskometer” type facts.
 
-**Target source list size:** 15–25 URLs, delivered as CSV or Markdown.
+**Target source list size:** at least 15 URLs, delivered as CSV or Markdown. The implemented corpus has 41 official URLs.
 
 ---
 
@@ -182,7 +182,7 @@ Future providers (config-ready, not required for v1 demo): Gemini, OpenAI, Anthr
 ## 12. Deliverables
 
 1. Working prototype (hosted app/notebook) **or** a ≤ 3-minute demo video if hosting is not possible.
-2. Source list (CSV or MD) of the 15–25 URLs used.
+2. Source list (CSV or MD) of the official URLs used (implemented: 41).
 3. README: setup steps, scope (AMC + schemes), known limits.
 4. Sample Q&A file: 5–10 queries with assistant answers + links.
 5. Disclaimer snippet used in the UI.
@@ -219,6 +219,6 @@ Future providers (config-ready, not required for v1 demo): Gemini, OpenAI, Anthr
 ## 16. Open items
 
 - Confirm the exact Groq model id in `.env` (`qwen/qwen3.8-27b` in the problem statement may not match Groq’s catalog).
-- Confirm extra 10–20 official URLs (help center, factsheets, AMFI/SEBI) to reach 15–25 sources.
+- Corpus extended to 41 official URLs (Groww, HDFC AMC, AMFI, SEBI); `mid_cap` and `investor.sebi.gov.in` rows are marked `PATTERN_INFERRED_VERIFY`.
 - Confirm demo surface: local Streamlit/FastAPI app vs notebook vs video.
 - Confirm chunking strategy after inspecting page structure (tables vs narrative).

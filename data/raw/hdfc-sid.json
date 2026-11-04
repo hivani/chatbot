@@ -1,0 +1,73 @@
+{
+  "doc_id": "hdfc-sid",
+  "url": "https://www.hdfcfund.com/mutual-funds/fund-documents/sid",
+  "title": "Scheme Information Documents",
+  "category": "education",
+  "scraped_at": "2026-11-04T09:09:21Z",
+  "http_status": 200,
+  "content_type": "sid_index",
+  "blocks": [
+    {
+      "kind": "heading",
+      "level": 1,
+      "text": "Fund Documents"
+    },
+    {
+      "kind": "list",
+      "items": [
+        "KIM",
+        "SID",
+        "Scheme Summary"
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID - HDFC Hybrid Debt Fund"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID - HDFC Housing Opportunities Fund dated November 21, 2025"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID - HDFC Retirement Savings (Hybrid Debt Plan) Fund"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID - HDFC Charity Fund for Cancer Cure - Debt Plan"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID - HDFC Charity Fund for Cancer Cure - Arbitrage Plan"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID 1-HDFC CPO-I-36M Aug 2013"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID-2-HDFC CPO-I-36M September 2013"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID-3-HDFC CPO-I-36M October 2013"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID1-HDFC CPO-II-36M January 2014"
+    },
+    {
+      "kind": "paragraph",
+      "text": "SID 2-HDFC CPO-II-36M February 2014"
+    }
+  ],
+  "text": "Fund Documents\nKIM\nSID\nScheme Summary\nSID - HDFC Hybrid Debt Fund\nSID - HDFC Housing Opportunities Fund dated November 21, 2025\nSID - HDFC Retirement Savings (Hybrid Debt Plan) Fund\nSID - HDFC Charity Fund for Cancer Cure - Debt Plan\nSID - HDFC Charity Fund for Cancer Cure - Arbitrage Plan\nSID 1-HDFC CPO-I-36M Aug 2013\nSID-2-HDFC CPO-I-36M September 2013\nSID-3-HDFC CPO-I-36M October 2013\nSID1-HDFC CPO-II-36M January 2014\nSID 2-HDFC CPO-II-36M February 2014",
+  "content_hash": "sha256:f9d607f26ff188aa12cc9260a0959893adf5d1748ad1696249f4d38a633324f4",
+  "aliases": [],
+  "notes": "Scheme Information Documents — HDFC AMC SID index",
+  "page_title": "Scheme Information Document (SID) | HDFC Mutual Fund",
+  "publisher": "HDFC AMC",
+  "doc_type": "sid_index",
+  "scheme": "general",
+  "status": "active"
+}

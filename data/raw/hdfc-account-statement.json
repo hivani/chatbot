@@ -1,0 +1,55 @@
+{
+  "doc_id": "hdfc-account-statement",
+  "url": "https://www.hdfcfund.com/account-statement",
+  "title": "Account Statement",
+  "category": "education",
+  "scraped_at": "2026-11-04T09:09:21Z",
+  "http_status": 200,
+  "content_type": "statement_guide",
+  "blocks": [
+    {
+      "kind": "heading",
+      "level": 1,
+      "text": "Download Statement"
+    },
+    {
+      "kind": "paragraph",
+      "text": "PAN"
+    },
+    {
+      "kind": "paragraph",
+      "text": "OR"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Folio"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Duration"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "FAQs"
+    },
+    {
+      "kind": "list",
+      "items": [
+        "An Account Statement (AS) is a consolidated document that provides a detailed summary of all mutual fund transactions carried out by an investor. It includes information such as purchases, redemptions, switches, dividends, and the units allotted in the folio.",
+        "You can download the AS as soon as you begin investing with us. An Account Statement is generated each time a transaction is processed and units are allotted in the investor’s folio.",
+        "No. There is no charge or fee for receiving or downloading your Account Statement.",
+        "You can download the following types of statements: PAN-based Account Statement: Consolidated view of all folios linked to the PAN. Folio-based Account Statement: Statement specific to a single folio."
+      ]
+    }
+  ],
+  "text": "Download Statement\nPAN\nOR\nFolio\nDuration\nFAQs\nAn Account Statement (AS) is a consolidated document that provides a detailed summary of all mutual fund transactions carried out by an investor. It includes information such as purchases, redemptions, switches, dividends, and the units allotted in the folio.\nYou can download the AS as soon as you begin investing with us. An Account Statement is generated each time a transaction is processed and units are allotted in the investor’s folio.\nNo. There is no charge or fee for receiving or downloading your Account Statement.\nYou can download the following types of statements: PAN-based Account Statement: Consolidated view of all folios linked to the PAN. Folio-based Account Statement: Statement specific to a single folio.",
+  "content_hash": "sha256:14797f3bb7916e7bda9e2f46590dcb7307dcacfa370e42cef1291ee5b62b3ec7",
+  "aliases": [],
+  "notes": "Account Statement — HDFC AMC statement guide",
+  "page_title": "Download Consolidated Account Statement | HDFC Mutual Fund",
+  "publisher": "HDFC AMC",
+  "doc_type": "statement_guide",
+  "scheme": "general",
+  "status": "active"
+}

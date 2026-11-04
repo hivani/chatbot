@@ -1,14 +1,14 @@
 {
-  "started_at": "2026-11-02T07:03:12Z",
-  "finished_at": "2026-11-02T07:03:24Z",
+  "started_at": "2026-11-04T09:09:08Z",
+  "finished_at": "2026-11-04T09:09:23Z",
   "sources_file": "/Users/shivanireddy/Desktop/Growchatbot/data/sources.csv",
   "raw_dir": "/Users/shivanireddy/Desktop/Growchatbot/data/raw",
-  "total": 21,
-  "succeeded": 21,
+  "total": 41,
+  "succeeded": 41,
   "failed": 0,
   "minimum_required": 15,
   "status": "success",
-  "source_list_hash": "sha256:028757562c22b8ecd8395fd40051bf8eba5546219f0b22361515b6f738dad9e9",
+  "source_list_hash": "sha256:f17bba80b6a5570539698b33a44e9ca25918ce5e1932a3d4bbff9299e1c7712b",
   "links_followed": 0,
   "results": [
     {
@@ -17,9 +17,9 @@
       "status": "ok",
       "http_status": 200,
       "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-large-cap.json",
-      "content_hash": "sha256:95676828d877bd17c0fe211c20290a1de4449a23d64922d77df950e0947542ad",
+      "content_hash": "sha256:831f0bb1cb620a28768d7c3ea23e8256e3e5659651ccdf6900b290d89cdcb419",
       "blocks": 18,
-      "text_chars": 2313
+      "text_chars": 2299
     },
     {
       "doc_id": "hdfc-flexi-cap",
@@ -27,9 +27,9 @@
       "status": "ok",
       "http_status": 200,
       "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-flexi-cap.json",
-      "content_hash": "sha256:b452e84ff61f8b641a0534a6dbbafcb4e554ec77fd7309bb4843f2a0224364db",
+      "content_hash": "sha256:71d98603f2403c61e7d12ecf45e616a242d607d851d00f5f78dfa741b65ad5af",
       "blocks": 18,
-      "text_chars": 2331
+      "text_chars": 2322
     },
     {
       "doc_id": "hdfc-elss",
@@ -37,7 +37,7 @@
       "status": "ok",
       "http_status": 200,
       "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-elss.json",
-      "content_hash": "sha256:8a83523d7f25df103223ce0e39d7594807779874cca72d7aa507539fd3d3636f",
+      "content_hash": "sha256:456f6db3f79323ff80daef8cba21f7dcc7c692ca2a1ff7720d14db2339a9c3d6",
       "blocks": 16,
       "text_chars": 1897
     },
@@ -47,7 +47,7 @@
       "status": "ok",
       "http_status": 200,
       "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-mid-cap.json",
-      "content_hash": "sha256:796b09b002b76de897293435372c121b420f02bff20d99dcf8ae1cbcf04e92c1",
+      "content_hash": "sha256:248d81c05a34cee43aef0ff8b7ba77789a6e0b328cf528b53fa6d96488e849bc",
       "blocks": 18,
       "text_chars": 2303
     },
@@ -57,9 +57,9 @@
       "status": "ok",
       "http_status": 200,
       "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-amc.json",
-      "content_hash": "sha256:954f76e36cb15bd80de8898795c2bf08e2e67f9dcfe0ee998979b71ca773bacc",
+      "content_hash": "sha256:ae6d129711af3d77876f621ef7550365b1636b640a97de9bb1faa19fb7d6707e",
       "blocks": 64,
-      "text_chars": 12277
+      "text_chars": 12272
     },
     {
       "doc_id": "mf-expenses",
@@ -220,6 +220,206 @@
       "content_hash": "sha256:1ce47757f507f66a1afd0d02ec8e910b72f25a26d85dfd813742170a497f6211",
       "blocks": 7,
       "text_chars": 1225
+    },
+    {
+      "doc_id": "hdfc-lc-regular",
+      "url": "https://www.hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/regular",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-lc-regular.json",
+      "content_hash": "sha256:4824ff6c8c56de1f7485e8a4631bf0b9ada35cb042b648a47bbfe0ecd734924a",
+      "blocks": 57,
+      "text_chars": 5096
+    },
+    {
+      "doc_id": "hdfc-lc-direct",
+      "url": "https://hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/direct",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-lc-direct.json",
+      "content_hash": "sha256:ea9433fd8536c84de69666ca7afcd82b7457da871e6fbf503d1df792c7c045c0",
+      "blocks": 57,
+      "text_chars": 5096
+    },
+    {
+      "doc_id": "hdfc-lc-overview",
+      "url": "https://www.hdfcfund.com/product-solutions/overview/hdfc-large-cap-fund/regular",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-lc-overview.json",
+      "content_hash": "sha256:4824ff6c8c56de1f7485e8a4631bf0b9ada35cb042b648a47bbfe0ecd734924a",
+      "blocks": 57,
+      "text_chars": 5096
+    },
+    {
+      "doc_id": "hdfc-flexi-regular",
+      "url": "https://www.hdfcfund.com/explore/mutual-funds/hdfc-flexi-cap-fund/regular",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-flexi-regular.json",
+      "content_hash": "sha256:0338a82556760349b8e66ad7f4199319cac865cc3d3e0c00cd1bd9fedd9b3710",
+      "blocks": 69,
+      "text_chars": 6773
+    },
+    {
+      "doc_id": "hdfc-flexi-direct",
+      "url": "https://hdfcfund.com/explore/mutual-funds/hdfc-flexi-cap-fund/direct",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-flexi-direct.json",
+      "content_hash": "sha256:2e55d0b51171c69bf3903805e9960ff40dc2490cadbd643f09d729278f86dfe5",
+      "blocks": 69,
+      "text_chars": 6773
+    },
+    {
+      "doc_id": "hdfc-flexi-overview",
+      "url": "https://www.hdfcfund.com/product-solutions/overview/hdfc-flexi-cap-fund/regular",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-flexi-overview.json",
+      "content_hash": "sha256:0338a82556760349b8e66ad7f4199319cac865cc3d3e0c00cd1bd9fedd9b3710",
+      "blocks": 69,
+      "text_chars": 6773
+    },
+    {
+      "doc_id": "hdfc-flexi-product",
+      "url": "https://www.hdfcfund.com/products/equity/flexi-cap-fund",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-flexi-product.json",
+      "content_hash": "sha256:2e55d0b51171c69bf3903805e9960ff40dc2490cadbd643f09d729278f86dfe5",
+      "blocks": 69,
+      "text_chars": 6773
+    },
+    {
+      "doc_id": "hdfc-elss-overview-direct",
+      "url": "https://www.hdfcfund.com/product-solutions/overview/hdfc-elss-tax-saver/direct",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-elss-overview-direct.json",
+      "content_hash": "sha256:a10c105f6e2c16711ec03154077bc70f337d62879ad33f00bdca1b2ac4743bc3",
+      "blocks": 59,
+      "text_chars": 5657
+    },
+    {
+      "doc_id": "hdfc-elss-explore-direct",
+      "url": "https://hdfcfund.com/explore/mutual-funds/hdfc-elss-tax-saver/direct",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-elss-explore-direct.json",
+      "content_hash": "sha256:a10c105f6e2c16711ec03154077bc70f337d62879ad33f00bdca1b2ac4743bc3",
+      "blocks": 59,
+      "text_chars": 5657
+    },
+    {
+      "doc_id": "hdfc-elss-overview-regular",
+      "url": "https://www.hdfcfund.com/product-solutions/overview/hdfc-elss-tax-saver/regular",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-elss-overview-regular.json",
+      "content_hash": "sha256:9763d60c3e7d60d9367cab15053f9f7ad1243165785176c9ab88c45f62b8bbfb",
+      "blocks": 59,
+      "text_chars": 5658
+    },
+    {
+      "doc_id": "hdfc-elss-presentation",
+      "url": "https://files.hdfcfund.com/s3fs-public/Others/2025-10/HDFC%20ELSS%20Tax%20saver%20Presentation%20%28October%202025%29.pdf",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-elss-presentation.json",
+      "content_hash": "sha256:5f2b0ff5761b610461a3810668803ac97419a5446cfd3ada43814aaa8a453af3",
+      "blocks": 18,
+      "text_chars": 22241
+    },
+    {
+      "doc_id": "hdfc-mid-regular",
+      "url": "https://www.hdfcfund.com/explore/mutual-funds/hdfc-mid-cap-fund/regular",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-mid-regular.json",
+      "content_hash": "sha256:97bacb359b6899e0b55f7bbf8a15f83f3ca72a13851a138c3faac64d29324935",
+      "blocks": 57,
+      "text_chars": 4936
+    },
+    {
+      "doc_id": "hdfc-mid-direct",
+      "url": "https://www.hdfcfund.com/explore/mutual-funds/hdfc-mid-cap-fund/direct",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-mid-direct.json",
+      "content_hash": "sha256:2da440f82cb6d296007eb3e96b6d334b00e6bb4287bc452afa8c735720407fb3",
+      "blocks": 57,
+      "text_chars": 4936
+    },
+    {
+      "doc_id": "hdfc-sid",
+      "url": "https://www.hdfcfund.com/mutual-funds/fund-documents/sid",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-sid.json",
+      "content_hash": "sha256:f9d607f26ff188aa12cc9260a0959893adf5d1748ad1696249f4d38a633324f4",
+      "blocks": 12,
+      "text_chars": 460
+    },
+    {
+      "doc_id": "hdfc-account-statement",
+      "url": "https://www.hdfcfund.com/account-statement",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-account-statement.json",
+      "content_hash": "sha256:14797f3bb7916e7bda9e2f46590dcb7307dcacfa370e42cef1291ee5b62b3ec7",
+      "blocks": 7,
+      "text_chars": 772
+    },
+    {
+      "doc_id": "hdfc-capital-gain-guide",
+      "url": "https://www.hdfcfund.com/learners-corner/beginner/how-get-capital-gain-statement-mutual-fund-schemes-india",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-capital-gain-guide.json",
+      "content_hash": "sha256:331f92457e6ed5274fc5cf55daf6d351a123d6a0668a2b1446487293a6c44f9e",
+      "blocks": 54,
+      "text_chars": 6247
+    },
+    {
+      "doc_id": "hdfc-distributor-faqs",
+      "url": "https://www.hdfcfund.com/distributor-corner/faqs",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/hdfc-distributor-faqs.json",
+      "content_hash": "sha256:df0da9d1aaf82b022d85e353756c32ce0f727385d07636d8c820d5db873f307b",
+      "blocks": 2,
+      "text_chars": 34152
+    },
+    {
+      "doc_id": "sebi-riskometer-circular",
+      "url": "https://www.sebi.gov.in/legal/circulars/oct-2020/circular-on-product-labeling-in-mutual-fund-schemes-risk-o-meter_47796.html",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/sebi-riskometer-circular.json",
+      "content_hash": "sha256:0f34fee2363c9fcdec89160cb825c03b8098ab43fb5b7569275e6a305cd53317",
+      "blocks": 4,
+      "text_chars": 126
+    },
+    {
+      "doc_id": "sebi-riskometer-circular-pdf",
+      "url": "https://www.sebi.gov.in/sebi_data/attachdocs/oct-2020/1602580413614.pdf",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/sebi-riskometer-circular-pdf.json",
+      "content_hash": "sha256:cca65a3ccc6178f46def2704912a4329a357801caf35e3cdc86c98281feb8417",
+      "blocks": 23,
+      "text_chars": 27798
+    },
+    {
+      "doc_id": "sebi-investor-education",
+      "url": "https://investor.sebi.gov.in/",
+      "status": "ok",
+      "http_status": 200,
+      "raw_path": "/Users/shivanireddy/Desktop/Growchatbot/data/raw/sebi-investor-education.json",
+      "content_hash": "sha256:213fe959ab5f199ebf44384e795086200e32095a8a2df7f3bdefca031f1c6128",
+      "blocks": 22,
+      "text_chars": 1464
     }
   ]
 }

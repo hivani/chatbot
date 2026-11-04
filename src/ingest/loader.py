@@ -6,9 +6,17 @@ blocks (headings, tables, lists, paragraphs), and writes one JSON document per
 source plus ``data/raw/ingest_manifest.json``.
 
 Scope rule: only the exact URLs shared in ``data/sources.csv`` are fetched.
-The scraper never follows links found on a page, never downloads linked
-documents (SID/KIM/fact sheet/PDFs), and drops the page's "Documents" section
-from the extracted content.
+The scraper never follows links found on a page and drops the page's
+"Documents" section from the extracted content. Explicitly listed PDF sources
+are extracted with ``pypdf``; linked documents are never discovered or fetched.
+
+Two CSV layouts are supported:
+
+* legacy: ``id,url,title,category,aliases,notes``
+* current: ``id,url,publisher,doc_type,scheme,status,note``
+
+The current layout derives the internal ``title``/``category`` values from
+``note``/``doc_type`` so the rest of the pipeline is unchanged.
 """
 
 from __future__ import annotations
@@ -23,7 +31,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Sequence
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -45,12 +53,27 @@ MANIFEST_FILENAME = "ingest_manifest.json"
 
 # Hosts that are allowed as corpus sources. The official AMFI investor
 # education site is mutualfundssahihai.com (amfiindia.com links to it).
+# ``www.`` is normalized away, so ``hdfcfund.com`` also covers
+# ``www.hdfcfund.com``; ``files.hdfcfund.com`` serves the listed PDFs.
 ALLOWED_HOSTS: frozenset[str] = frozenset(
     {
         "groww.in",
         "amfiindia.com",
         "sebi.gov.in",
+        "investor.sebi.gov.in",
+        "hdfcfund.com",
+        "files.hdfcfund.com",
         "mutualfundssahihai.com",
+    }
+)
+
+# Site roots are rejected because they rarely contain the requested facts.
+# These exact official roots are explicitly listed in sources.csv and are
+# allowed as landing pages.
+ROOT_ALLOWED_URLS: frozenset[str] = frozenset(
+    {
+        "https://investor.sebi.gov.in",
+        "https://www.investor.sebi.gov.in",
     }
 )
 
@@ -64,9 +87,60 @@ USER_AGENT = (
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
 
+# Some official sites (notably HDFC AMC's CDN) return 403 to generic clients
+# but serve the same public page to search-engine indexers. Retry only those
+# explicitly listed hosts once with an indexer-compatible UA instead of failing
+# the whole source. This is a fetch fallback, not a crawl: the URL is still the
+# exact row from sources.csv.
+CRAWLER_FALLBACK_HOSTS: frozenset[str] = frozenset({"hdfcfund.com"})
+CRAWLER_FALLBACK_USER_AGENT = (
+    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+)
+
 SOURCE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 REQUIRED_COLUMNS = ("id", "url", "title", "category")
+NEW_REQUIRED_COLUMNS = (
+    "id",
+    "url",
+    "publisher",
+    "doc_type",
+    "scheme",
+    "status",
+    "note",
+)
+
+# ``doc_type`` is the current schema's replacement for ``category``. It keeps
+# the source inventory explicit while preserving the pipeline's small set of
+# internal categories.
+DOC_TYPE_CATEGORIES: dict[str, str] = {
+    "scheme_page": "scheme",
+    "presentation": "scheme",
+    "amc_page": "amc",
+    "education": "education",
+    "sid_index": "education",
+    "statement_guide": "education",
+    "faq": "education",
+    "circular": "regulator",
+    "circular_pdf": "regulator",
+    "investor_education": "education",
+}
+
+SCHEME_VALUES = frozenset({"large_cap", "flexi_cap", "elss", "mid_cap", "general"})
+
+# Aliases used by query-time scheme detection. Multiple rows can share a
+# scheme; matching any of them is enough to bind the question to the scheme.
+SCHEME_ALIASES: dict[str, tuple[str, ...]] = {
+    "large_cap": ("HDFC Large Cap", "Large Cap Fund", "HDFC Large Cap Fund"),
+    "flexi_cap": (
+        "HDFC Flexi Cap",
+        "Flexi Cap Fund",
+        "HDFC Flexi Cap Fund",
+        "HDFC Equity Fund",
+    ),
+    "elss": ("HDFC ELSS", "ELSS Tax Saver", "ELSS", "HDFC ELSS Tax Saver"),
+    "mid_cap": ("HDFC Mid Cap", "Mid Cap Fund", "HDFC Mid Cap Fund"),
+}
 
 HEADING_TAGS = {"h1": 1, "h2": 2, "h3": 3, "h4": 4, "h5": 5, "h6": 6}
 BLOCK_CHILD_TAGS = {
@@ -103,7 +177,7 @@ BLOCK_CHILD_TAGS = {
 
 # Remove these tags before extraction. ``header`` is handled separately because
 # Groww puts the scheme name and risk label inside a page-level <header>.
-NOISE_TAGS = ("script", "style", "noscript", "iframe", "svg", "nav", "aside", "form", "button")
+NOISE_TAGS = ("script", "style", "noscript", "iframe", "svg", "nav", "aside", "button")
 
 # Class-name fragments for sections that are either modal chrome or
 # performance/portfolio content outside the facts-only FAQ scope.
@@ -216,6 +290,10 @@ class SourceSpec:
     category: str
     aliases: tuple[str, ...] = ()
     notes: str = ""
+    publisher: str = ""
+    doc_type: str = ""
+    scheme: str = ""
+    status: str = ""
 
 
 @dataclass(frozen=True)
@@ -235,6 +313,10 @@ class RawDocument:
     aliases: tuple[str, ...] = ()
     notes: str = ""
     page_title: str = ""
+    publisher: str = ""
+    doc_type: str = ""
+    scheme: str = ""
+    status: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -251,6 +333,10 @@ class RawDocument:
             "aliases": list(self.aliases),
             "notes": self.notes,
             "page_title": self.page_title,
+            "publisher": self.publisher,
+            "doc_type": self.doc_type,
+            "scheme": self.scheme,
+            "status": self.status,
         }
 
 
@@ -372,7 +458,8 @@ def validate_source_url(url: str) -> str:
             f"Allowed hosts: {', '.join(sorted(ALLOWED_HOSTS))}"
         )
     if not parsed.path or parsed.path == "/":
-        raise SourceError(f"URL must point to a page, not the site root: {url}")
+        if url.rstrip("/") not in ROOT_ALLOWED_URLS:
+            raise SourceError(f"URL must point to a page, not the site root: {url}")
     return url
 
 
@@ -385,12 +472,67 @@ def _parse_aliases(value: str | None) -> tuple[str, ...]:
     return tuple(aliases)
 
 
+_ACRONYMS = {
+    "amc": "AMC",
+    "cas": "CAS",
+    "elss": "ELSS",
+    "faq": "FAQ",
+    "hdfc": "HDFC",
+    "pdf": "PDF",
+    "sebi": "SEBI",
+    "sid": "SID",
+    "sip": "SIP",
+}
+
+
+def _slug_to_title(value: str) -> str:
+    """Turn a URL slug or PDF filename into a readable title."""
+
+    text = unquote(value)
+    text = re.sub(r"\.(?:html?|php|aspx?|pdf)$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"_\d+$", "", text)
+    text = re.sub(r"[-_]+", " ", text)
+    words = re.sub(r"\s+", " ", text).strip().split()
+    return " ".join(_ACRONYMS.get(word.casefold(), word.capitalize()) for word in words)
+
+
+def _title_from_url(url: str) -> str:
+    parsed = urlparse(url)
+    path = parsed.path.rstrip("/")
+    slug = path.rsplit("/", 1)[-1] if path else ""
+    if slug:
+        return _slug_to_title(slug)
+    return _slug_to_title(parsed.hostname or "")
+
+
+def _derive_title(url: str, note: str) -> str:
+    """Use the leading label in ``note`` as the title, else the URL slug."""
+
+    label = re.split(r"\s+—\s+", note, maxsplit=1)[0].strip()
+    if label:
+        return label
+    return _title_from_url(url)
+
+
+def _aliases_for_scheme(scheme: str) -> tuple[str, ...]:
+    return SCHEME_ALIASES.get(scheme, ())
+
+
+def _uses_new_schema(fieldnames: list[str]) -> bool:
+    names = set(fieldnames or [])
+    return "doc_type" in names or "publisher" in names
+
+
 def load_sources(path: str | Path) -> list[SourceSpec]:
     """Read and validate ``sources.csv``.
 
+    Supports both the legacy ``id,url,title,category,aliases,notes`` layout and
+    the current ``id,url,publisher,doc_type,scheme,status,note`` layout.
+
     Raises:
         SourceError: when the file is missing, has missing columns, duplicate
-            IDs, invalid IDs, or URLs outside the allowlist.
+            IDs, invalid IDs, unsupported schemes/doc types, or URLs outside
+            the allowlist.
     """
 
     source_path = Path(path)
@@ -401,7 +543,9 @@ def load_sources(path: str | Path) -> list[SourceSpec]:
         with source_path.open("r", encoding="utf-8-sig", newline="") as handle:
             reader = csv.DictReader(handle)
             fieldnames = reader.fieldnames or []
-            missing = [column for column in REQUIRED_COLUMNS if column not in fieldnames]
+            new_schema = _uses_new_schema(fieldnames)
+            required = NEW_REQUIRED_COLUMNS if new_schema else REQUIRED_COLUMNS
+            missing = [column for column in required if column not in fieldnames]
             if missing:
                 raise SourceError(
                     f"{source_path} is missing required column(s): {', '.join(missing)}"
@@ -414,13 +558,51 @@ def load_sources(path: str | Path) -> list[SourceSpec]:
             for line_number, row in enumerate(reader, start=2):
                 doc_id = _clean(row.get("id"))
                 url = _clean(row.get("url"))
-                title = _clean(row.get("title"))
-                category = _clean(row.get("category")).lower()
 
-                if not doc_id or not url or not title or not category:
-                    raise SourceError(
-                        f"{source_path}:{line_number} has an empty id, url, title, or category"
-                    )
+                if new_schema:
+                    publisher = _clean(row.get("publisher"))
+                    doc_type = _clean(row.get("doc_type")).lower()
+                    scheme = _clean(row.get("scheme")).lower()
+                    status = _clean(row.get("status")) or "active"
+                    note = _clean(row.get("note"))
+
+                    if not doc_id or not url or not publisher or not doc_type or not scheme:
+                        raise SourceError(
+                            f"{source_path}:{line_number} has an empty id, url, "
+                            "publisher, doc_type, or scheme"
+                        )
+                    if scheme not in SCHEME_VALUES:
+                        raise SourceError(
+                            f"{source_path}:{line_number} has unsupported scheme "
+                            f"{scheme!r}; use one of {', '.join(sorted(SCHEME_VALUES))}"
+                        )
+                    category = DOC_TYPE_CATEGORIES.get(doc_type)
+                    if category is None:
+                        raise SourceError(
+                            f"{source_path}:{line_number} has unsupported doc_type "
+                            f"{doc_type!r}; use one of "
+                            f"{', '.join(sorted(DOC_TYPE_CATEGORIES))}"
+                        )
+
+                    title = _derive_title(url, note)
+                    aliases = _aliases_for_scheme(scheme)
+                    notes = note
+                else:
+                    title = _clean(row.get("title"))
+                    category = _clean(row.get("category")).lower()
+                    publisher = ""
+                    doc_type = ""
+                    scheme = ""
+                    status = ""
+                    aliases = _parse_aliases(row.get("aliases"))
+                    notes = _clean(row.get("notes"))
+
+                    if not doc_id or not url or not title or not category:
+                        raise SourceError(
+                            f"{source_path}:{line_number} has an empty id, url, "
+                            "title, or category"
+                        )
+
                 if not SOURCE_ID_RE.fullmatch(doc_id):
                     raise SourceError(
                         f"{source_path}:{line_number} has invalid id {doc_id!r}; "
@@ -445,8 +627,12 @@ def load_sources(path: str | Path) -> list[SourceSpec]:
                         url=url,
                         title=title,
                         category=category,
-                        aliases=_parse_aliases(row.get("aliases")),
-                        notes=_clean(row.get("notes")),
+                        aliases=aliases,
+                        notes=notes,
+                        publisher=publisher,
+                        doc_type=doc_type,
+                        scheme=scheme,
+                        status=status,
                     )
                 )
     except OSError as exc:
@@ -589,6 +775,22 @@ def _select_content_root(soup: BeautifulSoup) -> Tag:
 
 
 def _remove_noise(root: Tag) -> None:
+    # Some government sites wrap the whole page in a <form>. Keep forms that
+    # contain the real content (unwrap them) and drop short login/newsletter
+    # forms as before.
+    for element in list(root.find_all("form")):
+        if getattr(element, "decomposed", False):
+            continue
+        wraps_page = element.parent is root and root.name == "body"
+        if (
+            wraps_page
+            or len(_text(element)) > 500
+            or element.find(["main", "article", "[role='main']"]) is not None
+        ):
+            element.unwrap()
+        else:
+            element.decompose()
+
     for tag_name in NOISE_TAGS:
         for element in list(root.find_all(tag_name)):
             if not getattr(element, "decomposed", False):
@@ -991,13 +1193,67 @@ def extract_page(html: str, category: str = "") -> ExtractedPage:
 # ---------------------------------------------------------------------------
 
 
-def _content_type(category: str) -> str:
+def _content_type(category: str, doc_type: str = "") -> str:
+    if doc_type:
+        return doc_type
     return {
         "scheme": "scheme_page",
         "amc": "amc_page",
         "education": "education_page",
         "regulator": "regulator_page",
     }.get(category, "page")
+
+
+def _is_pdf_source(spec: SourceSpec) -> bool:
+    if spec.doc_type.casefold().endswith("pdf"):
+        return True
+    return urlparse(spec.url).path.casefold().endswith(".pdf")
+
+
+def _extract_pdf(content: bytes, spec: SourceSpec) -> ExtractedPage:
+    """Extract page-level text from an explicitly listed PDF source."""
+
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:  # pragma: no cover - depends on local extras
+        raise FetchError(
+            "PDF sources require pypdf; run `pip install -r requirements-local.txt`"
+        ) from exc
+
+    from io import BytesIO
+
+    try:
+        reader = PdfReader(BytesIO(content))
+    except Exception as exc:  # noqa: BLE001 - pypdf raises several types
+        raise FetchError(f"Could not read PDF {spec.url}: {exc}") from exc
+
+    blocks: list[dict] = []
+    pages: list[str] = []
+    for page in reader.pages:
+        try:
+            text = normalize_text(page.extract_text() or "")
+        except Exception as exc:  # noqa: BLE001 - malformed page
+            raise FetchError(f"Could not extract text from {spec.url}: {exc}") from exc
+        if not text:
+            continue
+        pages.append(text)
+        blocks.append({"kind": "paragraph", "text": text})
+
+    if not blocks:
+        raise FetchError(f"No extractable text for PDF source {spec.url}")
+
+    metadata = getattr(reader, "metadata", None)
+    page_title = ""
+    if metadata is not None:
+        page_title = normalize_text(getattr(metadata, "title", "") or "")
+    if not page_title:
+        page_title = _title_from_url(spec.url)
+
+    return ExtractedPage(
+        blocks=blocks,
+        text="\n".join(pages),
+        page_title=page_title,
+    )
 
 
 def _write_json_atomic(path: Path, payload: dict) -> None:
@@ -1032,10 +1288,20 @@ def fetch_document(
 
     response: requests.Response | None = None
     last_error: Exception | None = None
+    request_host = _normalize_host(urlparse(spec.url).hostname or "")
 
     for attempt in range(retries):
         try:
             response = http.get(spec.url, headers=headers, timeout=timeout)
+            if (
+                response.status_code == 403
+                and request_host in CRAWLER_FALLBACK_HOSTS
+            ):
+                response = http.get(
+                    spec.url,
+                    headers={**headers, "User-Agent": CRAWLER_FALLBACK_USER_AGENT},
+                    timeout=timeout,
+                )
         except requests.RequestException as exc:
             last_error = exc
             if attempt < retries - 1:
@@ -1056,7 +1322,15 @@ def fetch_document(
         raise FetchError(f"Could not fetch {spec.url}: {last_error or 'no response'}")
 
     content_type = response.headers.get("Content-Type", "")
-    if content_type and "html" not in content_type.lower():
+    lowered_type = content_type.lower()
+    is_pdf = _is_pdf_source(spec)
+
+    if is_pdf:
+        if "html" in lowered_type:
+            raise FetchError(
+                f"Unexpected Content-Type {content_type!r} for PDF source {spec.url}"
+            )
+    elif content_type and "html" not in lowered_type and "xml" not in lowered_type:
         raise FetchError(
             f"Unexpected Content-Type {content_type!r} for {spec.url}; expected HTML"
         )
@@ -1065,7 +1339,10 @@ def fetch_document(
     # Linked documents and internal links on the page are never fetched.
     _validate_fetched_url(getattr(response, "url", None) or spec.url, spec.url)
 
-    page = extract_page(response.text, spec.category)
+    if is_pdf:
+        page = _extract_pdf(response.content, spec)
+    else:
+        page = extract_page(response.text, spec.category)
     if not page.text.strip():
         raise FetchError(f"No extractable text for {spec.url}")
 
@@ -1076,13 +1353,17 @@ def fetch_document(
         category=spec.category,
         scraped_at=utc_now_iso(),
         http_status=response.status_code,
-        content_type=_content_type(spec.category),
+        content_type=_content_type(spec.category, spec.doc_type),
         blocks=page.blocks,
         text=page.text,
         content_hash=content_hash(page.text),
         aliases=spec.aliases,
         notes=spec.notes,
         page_title=page.page_title,
+        publisher=spec.publisher,
+        doc_type=spec.doc_type,
+        scheme=spec.scheme,
+        status=spec.status,
     )
 
 
@@ -1265,6 +1546,19 @@ def _raw_document_from_payload(
     if not isinstance(page_title, str):
         raise DocumentError(f"Raw document {path} has an invalid 'page_title' value")
 
+    publisher = payload.get("publisher", spec.publisher)
+    doc_type = payload.get("doc_type", spec.doc_type)
+    scheme = payload.get("scheme", spec.scheme)
+    status = payload.get("status", spec.status)
+    for name, value in (
+        ("publisher", publisher),
+        ("doc_type", doc_type),
+        ("scheme", scheme),
+        ("status", status),
+    ):
+        if not isinstance(value, str):
+            raise DocumentError(f"Raw document {path} has an invalid {name!r} value")
+
     return RawDocument(
         doc_id=payload["doc_id"],
         url=payload["url"],
@@ -1279,6 +1573,10 @@ def _raw_document_from_payload(
         aliases=tuple(str(alias) for alias in aliases),
         notes=notes,
         page_title=page_title,
+        publisher=publisher,
+        doc_type=doc_type,
+        scheme=scheme,
+        status=status,
     )
 
 

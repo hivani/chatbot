@@ -11,7 +11,7 @@
 
 This document describes how the Groww Mutual Fund FAQ Assistant is built: the components, the data contracts between RAG stages, the query-time control flow, and the guardrails that keep every answer factual, cited, and advice-free.
 
-The system is a **small-corpus, facts-only RAG prototype** over 15–25 official public URLs (Groww AMC/scheme pages plus official Groww help, AMFI, and SEBI pages). It answers questions about expense ratio, exit load, minimum SIP, ELSS lock-in, riskometer, benchmark, and statement downloads. It refuses investment advice, performance comparisons, and PII.
+The system is a **small-corpus, facts-only RAG prototype** over 41 official public URLs (Groww scheme/AMC pages, HDFC AMC scheme/product pages and listed PDFs, AMFI investor education, and SEBI circulars). The initial PRD scope was 15–25 URLs; the registry was extended to 41 official sources during implementation. It answers questions about expense ratio, exit load, minimum SIP, ELSS lock-in, riskometer, benchmark, and statement downloads. It refuses investment advice, performance comparisons, and PII.
 
 The design is optimized for **inspectability**, not scale: every stage writes a durable artifact that the UI can display for any query.
 
@@ -79,7 +79,7 @@ flowchart LR
 
 **External dependencies**
 
-- Public Groww, AMFI, and SEBI pages (read-only, at ingest time).
+- Public Groww, HDFC AMC, AMFI, and SEBI pages (read-only, at ingest time), including explicitly listed HDFC AMC and SEBI PDFs.
 - `sentence-transformers/all-MiniLM-L6-v2` (local embedding model).
 - ChromaDB (embedded/persistent client).
 - Groq chat-completions API (LLM).
@@ -190,7 +190,7 @@ Growchatbot/
 │   ├── DESIGN.md                # readable copy of the Stitch tokens
 │   └── README.md                # provenance + re-sync steps
 ├── data/
-│   ├── sources.csv              # deliverable: 15–25 official URLs
+│   ├── sources.csv              # source registry: 41 official URLs, current schema
 │   ├── raw/                     # stage 1 output: <doc_id>.json
 │   ├── chunks/                  # stage 2 output: chunks.jsonl
 │   ├── embeddings/              # stage 3 output: embeddings.npz + metadata.jsonl
@@ -247,21 +247,27 @@ Growchatbot/
 **Input:** `data/sources.csv` rows.
 
 ```csv
-id,url,title,category,aliases,notes
-hdfc-large-cap,https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth,HDFC Large Cap Fund Direct Growth,scheme,HDFC Large Cap|Large Cap Fund,
-hdfc-elss,https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth,HDFC ELSS Tax Saver Fund Direct Plan Growth,scheme,HDFC ELSS|ELSS Tax Saver|ELSS,
+id,url,publisher,doc_type,scheme,status,note
+hdfc-lc-regular,https://www.hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/regular,HDFC AMC,scheme_page,large_cap,active,HDFC Large Cap Fund Regular — HDFC AMC scheme page (regular plan)
+sebi-riskometer-circular-pdf,https://www.sebi.gov.in/sebi_data/attachdocs/oct-2020/1602580413614.pdf,SEBI,circular_pdf,general,active,SEBI Riskometer Circular PDF (October 2020) — product labelling circular PDF
 ```
 
-`aliases` is optional and pipe-separated; it lets the query layer detect which scheme a user means.
+The loader accepts this current layout and the legacy
+`id,url,title,category,aliases,notes` layout. With the current layout, the
+internal `title` is derived from the leading label in `note` (the text before
+` — `), `category` is derived from `doc_type`, and scheme aliases are derived
+from `scheme`. `status` is `active` unless a row is explicitly marked
+`PATTERN_INFERRED_VERIFY`. Duplicate IDs and URLs are rejected.
 
 **Process**
 
-1. Validate URL is HTTPS and host is in the allowlist (`groww.in`, `amfiindia.com`, `sebi.gov.in`).
-2. Fetch with a descriptive user agent, timeout, and retry/backoff.
-3. Extract main content, dropping nav, footer, ads, and unrelated scheme cards.
+1. Validate URL is HTTPS and host is in the allowlist (`groww.in`, `amfiindia.com`, `sebi.gov.in`, `investor.sebi.gov.in`, `hdfcfund.com`, `files.hdfcfund.com`, `mutualfundssahihai.com`). The `investor.sebi.gov.in` root is explicitly allowed.
+2. Fetch with a descriptive user agent, timeout, and retry/backoff. For `hdfcfund.com` only, a single 403 retry uses an indexer-compatible user agent; the URL is still the exact row from `sources.csv`.
+3. Extract main content, dropping nav, footer, ads, and unrelated scheme cards. Pages that wrap their real content in a `<form>` are unwrapped rather than discarded.
 4. Preserve structure hints: headings, list items, and tables (keep rows intact, including scheme name).
 5. Normalize whitespace but never rewrite numbers or units.
-6. Record `scraped_at` as an ISO-8601 UTC timestamp.
+6. For explicitly listed PDF sources, extract text page by page with `pypdf`; linked PDFs are never discovered or fetched.
+7. Record `scraped_at` as an ISO-8601 UTC timestamp and preserve `publisher`, `doc_type`, `scheme`, and `status`.
 
 **Output artifact:** one file per source, `data/raw/<doc_id>.json`.
 
@@ -280,7 +286,11 @@ hdfc-elss,https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-gro
     {"kind": "paragraph", "text": "..."}
   ],
   "text": "normalized plain text with table rows preserved",
-  "content_hash": "sha256:..."
+  "content_hash": "sha256:...",
+  "publisher": "HDFC AMC",
+  "doc_type": "scheme_page",
+  "scheme": "large_cap",
+  "status": "active"
 }
 ```
 
@@ -695,7 +705,7 @@ MISTRAL_API_KEY=
 
 ## 11. Security, privacy, and compliance
 
-- **Source allowlist:** only `groww.in`, `amfiindia.com`, `sebi.gov.in` (configurable). No third-party blogs, no app-backend screenshots.
+- **Source allowlist:** only `groww.in`, `amfiindia.com`, `sebi.gov.in`, `investor.sebi.gov.in`, `hdfcfund.com`, `files.hdfcfund.com`, and `mutualfundssahihai.com` (configurable). No third-party blogs, no app-backend screenshots. Only explicitly listed PDFs are extracted; linked documents are never fetched.
 - **PII:** detection at the edge; redaction before any logging or artifact write; no PII columns in Chroma; tests assert PII never reaches the prompt, Chroma, or artifact files.
 - **Secrets:** `.env` only; never logged; never placed in prompts or artifacts.
 - **Logging:** structured logs contain `query_id`, timings, counts, and status codes only — not raw user text. Query text lives only in the per-query artifact directory, which is local and inspectable, and is redacted for PII.
@@ -786,7 +796,7 @@ sidebar status shows the degraded state instead of crashing the page.
 
 | Decision | Choice | Rationale / trade-off |
 | --- | --- | --- |
-| Corpus | 15–25 official URLs, HDFC schemes only | Meets PRD scope; small enough to inspect, large enough for real retrieval |
+| Corpus | 41 official URLs across Groww, HDFC AMC, AMFI, and SEBI | Extends the original 15–25 PRD scope to cover HDFC scheme pages, SID/statement guides, and SEBI PDFs; still small enough to inspect |
 | Embeddings | `all-MiniLM-L6-v2` locally | Free, fast, no external dependency; 384-dim is enough for a tiny corpus |
 | Vector DB | Chroma persistent client | Simple local persistence, metadata filtering, easy inspector integration |
 | Chunking | Heading-aware + table-preserving | Scheme facts live in tables; naive fixed windows break fact-to-scheme binding |
@@ -827,6 +837,6 @@ sidebar status shows the degraded state instead of crashing the page.
 ## 18. Open items carried from the PRD
 
 1. Groq model id is pinned in `.env` as `qwen/qwen3.8-27b`; revisit if Groq retires it.
-2. Finalize the 10–20 extra official URLs (Groww help, factsheets, AMFI/SEBI) to reach 15–25 sources.
+2. Corpus extended to 41 official URLs (Groww, HDFC AMC, AMFI, SEBI), including `mid_cap` and `investor.sebi.gov.in` rows marked `PATTERN_INFERRED_VERIFY`; revisit if the scope needs to return to 15–25 sources.
 3. Demo surface confirmed: Stitch-derived web UI served by FastAPI is primary; Streamlit is the local reference.
 4. Confirm chunking parameters after inspecting the real page structure (tables vs narrative).

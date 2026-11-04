@@ -3,9 +3,9 @@
   "url": "https://www.mutualfundssahihai.com/en/what-costs-does-one-incur-while-redeeming-mutual-fund-units",
   "title": "What costs does one incur while redeeming Mutual Fund units?",
   "category": "education",
-  "scraped_at": "2026-11-02T07:03:19Z",
+  "scraped_at": "2026-11-04T09:09:11Z",
   "http_status": 200,
-  "content_type": "education_page",
+  "content_type": "education",
   "blocks": [
     {
       "kind": "heading",
@@ -39,12 +39,11 @@
   ],
   "text": "What costs does one incur while redeeming Mutual Fund units?\nNew to Mutual Funds\nWithdrawing from Mutual Funds\n56 seconds read\nOpen-ended Mutual Funds allow investors to redeem their units after certain period at no cost. If an investor wishes to redeem his/her units before this stipulated period, an exit load is levied. Mutual Funds charge exit load if investors sell their investments before having completed a specified time in the fund. This is meant to discourage investors with short-term goals from investing into funds that require long-term holding period. Liquid funds usually don’t have an exit load.\nExit loads are charged as a percentage of the NAV if units are redeemed before a given time as mentioned in the Scheme Information Document. Say, a scheme has 1% exit load if investment is redeemed before one year. If the NAV of the scheme is INR 100 and you redeem your holding before a year, you will receive only INR 99 per unit of your holding as 1% will be deducted by the fund house for premature redemption.\nYou’ll also incur capital gains tax depending on the kind of investments you’ve made and for how long did you hold the investment i.e Short-term or Long-term capital gains tax. Equity-oriented fun transactions are also subject to STT (Securities Transaction Tax). Every time you buy or sell units from these funds, you pay STT that adds up to the cost of your transaction.",
   "content_hash": "sha256:27a3cad8fa66e235d9f924d42fbe0b72ceeb56432ae49272ae5b8ed956028272",
-  "aliases": [
-    "redemption",
-    "redeem",
-    "exit load",
-    "stamp duty"
-  ],
-  "notes": "AMFI investor education",
-  "page_title": "Know the cost incurred during redemption of Mutual Funds"
+  "aliases": [],
+  "notes": "What costs does one incur while redeeming Mutual Fund units? — AMFI investor education",
+  "page_title": "Know the cost incurred during redemption of Mutual Funds",
+  "publisher": "AMFI",
+  "doc_type": "education",
+  "scheme": "general",
+  "status": "active"
 }

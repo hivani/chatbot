@@ -1,7 +1,7 @@
 # Implementation Guide: Groww Mutual Fund FAQ Assistant
 
 **Derived from:** [`architecture.md`](./architecture.md) and [`prd.md`](./prd.md)
-**Scope:** facts-only RAG over 15–25 official HDFC/Groww/AMFI/SEBI pages.
+**Scope:** facts-only RAG over official Groww, HDFC AMC, AMFI, and SEBI pages (currently 41 sources).
 
 Build order:
 
@@ -76,7 +76,7 @@ Growchatbot/
 │   ├── DESIGN.md
 │   └── README.md
 ├── data/
-│   ├── sources.csv          # 15–25 official URLs
+│   ├── sources.csv          # official source registry (currently 41 URLs)
 │   ├── raw/                 # scraped docs
 │   ├── chunks/              # chunks.jsonl
 │   ├── embeddings/          # embeddings.npz + metadata.jsonl
@@ -153,6 +153,8 @@ uvicorn[standard]>=0.30
 chromadb==1.5.9
 sentence-transformers>=3.0
 numpy>=1.26
+pypdf>=4.2
+fonttools>=4.53
 pytest>=8.2
 httpx>=0.27
 ```
@@ -215,33 +217,35 @@ Ignore `.env`, `.venv`, `data/raw/`, `data/chunks/`, `data/embeddings/`, `data/c
 
 ### 2.1 Create `data/sources.csv`
 
-Use only official public pages. Start with the 5 PRD URLs, then add official Groww help/education, AMFI, and SEBI pages until you have 15–25.
+Use only official public pages. Start with the 5 PRD URLs, then add official Groww help/education, HDFC AMC, AMFI, and SEBI pages. The implemented registry has 41 sources.
 
 ```csv
-id,url,title,category,aliases,notes
-hdfc-large-cap,https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth,HDFC Large Cap Fund Direct Growth,scheme,HDFC Large Cap|Large Cap Fund,
-hdfc-flexi-cap,https://groww.in/mutual-funds/hdfc-equity-fund-direct-growth,HDFC Flexi Cap Direct Plan Growth,scheme,HDFC Flexi Cap|Flexi Cap,
-hdfc-elss,https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth,HDFC ELSS Tax Saver Fund Direct Plan Growth,scheme,HDFC ELSS|ELSS Tax Saver|ELSS,
-hdfc-mid-cap,https://groww.in/mutual-funds/hdfc-mid-cap-fund-direct-growth,HDFC Mid Cap Fund Direct Growth,scheme,HDFC Mid Cap|Mid Cap,
-hdfc-amc,https://groww.in/mutual-funds/amc/hdfc-mutual-funds,HDFC Mutual Fund,amc,HDFC MF|HDFC Mutual Fund,
+id,url,publisher,doc_type,scheme,status,note
+hdfc-lc-regular,https://www.hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/regular,HDFC AMC,scheme_page,large_cap,active,HDFC Large Cap Fund Regular — HDFC AMC scheme page (regular plan)
+hdfc-elss-presentation,https://files.hdfcfund.com/s3fs-public/Others/2025-10/HDFC%20ELSS%20Tax%20saver%20Presentation%20%28October%202025%29.pdf,HDFC AMC,presentation,elss,active,HDFC ELSS Tax Saver Presentation (October 2025) — HDFC AMC presentation PDF
+sebi-riskometer-circular-pdf,https://www.sebi.gov.in/sebi_data/attachdocs/oct-2020/1602580413614.pdf,SEBI,circular_pdf,general,active,SEBI Riskometer Circular PDF (October 2020) — product labelling circular PDF
 ```
 
 Rules:
 
-- Host allowlist: `groww.in`, `amfiindia.com`, `sebi.gov.in`.
+- Host allowlist: `groww.in`, `amfiindia.com`, `sebi.gov.in`, `investor.sebi.gov.in`, `hdfcfund.com`, `files.hdfcfund.com`, `mutualfundssahihai.com`. The `investor.sebi.gov.in` root is explicitly allowed; other site roots are rejected.
+- `scheme` must be one of `large_cap`, `flexi_cap`, `elss`, `mid_cap`, `general`.
+- `status` is `active` unless a row is explicitly `PATTERN_INFERRED_VERIFY`.
+- The internal `title` comes from the leading label in `note` (before ` — `); `category` comes from `doc_type`; aliases come from `scheme`.
 - Scrape **only the exact URLs listed in `sources.csv`**. Never crawl or follow links found on a page.
-- Do not download or index linked internal documents (SID, KIM, fact sheet, SAI, PDFs) or any other internal link targets; drop a page's "Documents"/"Downloads" section during extraction.
+- Extract explicitly listed PDFs with `pypdf`; never download or index linked internal documents (SID, KIM, fact sheet, SAI, or any other PDF) that are not their own row.
+- Drop a page's "Documents"/"Downloads" section during extraction. Pages whose real content sits inside a `<form>` are unwrapped, not discarded.
 - No blogs, aggregators, or app-backend pages.
-- Validate each URL returns HTTP 200 before adding it.
-- `aliases` is optional and pipe-separated; it helps detect the scheme in a query.
+- For `hdfcfund.com`, a single 403 retry with an indexer-compatible user agent is allowed; the URL is still the exact `sources.csv` row.
+- Validate each URL is reachable and returns usable content before keeping it.
 
 ### 2.2 Implement `src/ingest/loader.py`
 
 For each source:
 
-1. Fetch with a browser-like user agent, 20 s timeout, 3 retries with backoff.
-2. Parse with BeautifulSoup + `lxml`.
-3. Remove `script`, `style`, `nav`, `header`, `footer`, `aside`, `form`, `iframe`, `svg`.
+1. Fetch with a browser-like user agent, 20 s timeout, 3 retries with backoff. For `hdfcfund.com` only, retry once with an indexer-compatible user agent after a 403.
+2. Parse with BeautifulSoup + `lxml`. Extract explicitly listed PDFs page-by-page with `pypdf` (and `fonttools` for some Type1 fonts).
+3. Remove `script`, `style`, `nav`, `header`, `footer`, `aside`, `iframe`, `svg`. Unwrap page-level `<form>` elements that contain the real content and remove short forms.
 4. Extract blocks:
    - headings → `{"kind": "heading", "level": 2, "text": ...}`
    - tables → `{"kind": "table", "rows": [["Expense ratio", "0.5%"], ...]}`
@@ -264,7 +268,11 @@ Raw document shape:
     {"kind": "table", "rows": [["Expense ratio", "..."], ["Exit load", "..."]]}
   ],
   "text": "...",
-  "content_hash": "sha256:..."
+  "content_hash": "sha256:...",
+  "publisher": "HDFC AMC",
+  "doc_type": "scheme_page",
+  "scheme": "elss",
+  "status": "active"
 }
 ```
 
@@ -276,7 +284,7 @@ Also write `data/raw/ingest_manifest.json` with total/succeeded/failed counts.
 python -m src.ingest.pipeline --stage load
 ```
 
-**Done when:** 15–25 raw files exist, `failed: 0`, and a scheme page contains a table block with expense ratio/exit load rows.
+**Done when:** all 41 raw files exist, `failed: 0`, and a scheme page contains a table block with expense ratio/exit load rows.
 
 **If a page is empty or JS-rendered:** look for embedded `__NEXT_DATA__` / `ld+json`, add an optional Playwright render path, or replace the source with an equivalent official page. Never keep an empty document.
 
@@ -725,7 +733,8 @@ python -m eval.run_eval
 
 ### 9.2 Acceptance checklist
 
-- [ ] 15–25 official URLs in `data/sources.csv`, all reachable.
+- [ ] 41 official URLs in `data/sources.csv` (all reachable), using the `id,url,publisher,doc_type,scheme,status,note` schema.
+- [ ] Explicitly listed PDFs extract text; linked documents are never fetched.
 - [ ] Raw docs load and validate (`--stage load-docs`) before chunking.
 - [ ] Raw docs, chunks, embeddings, and Chroma collection rebuild from scratch.
 - [ ] Ingest and query use the same embedding model.

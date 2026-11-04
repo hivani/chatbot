@@ -1,8 +1,8 @@
 # Growchatbot
 
-A facts-only mutual-fund FAQ assistant grounded in official Groww pages. It
-answers with at most three sentences, exactly one official citation, and a
-`Last updated from sources` timestamp. PII, investment advice, and performance
+A facts-only mutual-fund FAQ assistant grounded in official Groww, HDFC AMC,
+AMFI, and SEBI sources. It answers with at most three sentences, exactly one
+official citation, and a `Last updated from sources` timestamp. PII, investment advice, and performance
 questions are refused before retrieval, and raw PII is never persisted.
 
 ## What is included
@@ -18,6 +18,8 @@ questions are refused before retrieval, and raw PII is never persisted.
   `artifacts/<query_id>/`.
 - **Two retrieval modes**: Chroma + sentence-transformers locally, and a
   dependency-free BM25 index on Vercel so the function bundle stays small.
+- **Committed corpus**: 41 official sources, 423 chunks, and 41 raw documents
+  built from `data/sources.csv`.
 
 ## UI design source of truth
 
@@ -107,7 +109,7 @@ After deploying, check:
 curl https://<your-deployment>.vercel.app/health
 ```
 
-A healthy response includes `"status": "ok"`, `"index_count": 108`, and
+A healthy response includes `"status": "ok"`, `"index_count": 423`, and
 `"retriever": "lexical-bm25"`.
 
 ## Repository layout

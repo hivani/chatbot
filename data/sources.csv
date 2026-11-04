@@ -1,22 +1,42 @@
-id,url,title,category,aliases,notes
-hdfc-large-cap,https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth,HDFC Large Cap Fund Direct Growth,scheme,HDFC Large Cap|Large Cap Fund,Groww scheme page
-hdfc-flexi-cap,https://groww.in/mutual-funds/hdfc-equity-fund-direct-growth,HDFC Flexi Cap Direct Plan Growth,scheme,HDFC Flexi Cap|Flexi Cap|HDFC Equity Fund,Groww scheme page
-hdfc-elss,https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth,HDFC ELSS Tax Saver Fund Direct Plan Growth,scheme,HDFC ELSS|ELSS Tax Saver|ELSS,Groww scheme page
-hdfc-mid-cap,https://groww.in/mutual-funds/hdfc-mid-cap-fund-direct-growth,HDFC Mid Cap Fund Direct Growth,scheme,HDFC Mid Cap|Mid Cap,Groww scheme page
-hdfc-amc,https://groww.in/mutual-funds/amc/hdfc-mutual-funds,HDFC Mutual Fund,amc,HDFC MF|HDFC Mutual Fund,Groww AMC page
-mf-expenses,https://www.mutualfundssahihai.com/en/what-are-expenses-incurred-mutual-fund-scheme,What are the expenses incurred in a Mutual Fund scheme?,education,expense ratio|expenses|TER|total expense ratio,AMFI investor education
-mf-loads,https://www.mutualfundssahihai.com/en/what-are-loads,What are loads?,education,load|entry load|exit load,AMFI investor education
-mf-exit-load-advantage,https://www.mutualfundssahihai.com/en/there-advantage-investing-funds-exit-load,Is there an advantage in investing in funds with an exit load?,education,exit load|exit load advantage,AMFI investor education
-mf-redemption-costs,https://www.mutualfundssahihai.com/en/what-costs-does-one-incur-while-redeeming-mutual-fund-units,What costs does one incur while redeeming Mutual Fund units?,education,redemption|redeem|exit load|stamp duty,AMFI investor education
-mf-elss,https://www.mutualfundssahihai.com/en/elss-fund-tax-saving-mutual-fund,ELSS Fund – Tax Saving Mutual Fund,education,ELSS|tax saving|equity linked savings scheme,AMFI investor education
-mf-elss-advantages,https://www.mutualfundssahihai.com/en/advantages-of-elss-funds,What are the advantages of investing in ELSS Funds?,education,ELSS|tax benefit|lock-in,AMFI investor education
-mf-lock-in,https://www.mutualfundssahihai.com/en/what-is-lock-in-period,What is Lock-in Period in Mutual Funds?,education,lock-in|lock in period,AMFI investor education
-mf-riskometer,https://www.mutualfundssahihai.com/en/what-riskometer-and-what-are-different-levels,What is a Riskometer and what are the different levels?,education,riskometer|risk levels|risk,AMFI investor education
-mf-riskometer-derived,https://www.mutualfundssahihai.com/en/how-riskometer-scheme-derived,How is the Riskometer for a scheme derived?,education,riskometer|risk|scheme risk,AMFI investor education
-mf-capital-gain-statement,https://www.mutualfundssahihai.com/en/how-get-capital-gain-statement-mutual-funds,How to Get Capital Gain Statement for Mutual Funds?,education,capital gains statement|capital gain|statement download,AMFI investor education
-mf-cas,https://www.mutualfundssahihai.com/en/what-cas-consolidated-account-statement,What is CAS? (Consolidated Account Statement),education,CAS|consolidated account statement|statement,AMFI investor education
-mf-sip,https://www.mutualfundssahihai.com/en/what-is-sip,What is Systematic Investment Plan (SIP)?,education,SIP|systematic investment plan,AMFI investor education
-mf-taxation,https://www.mutualfundssahihai.com/en/what-are-the-taxation-rules-and-implications-in-mutual-fund,What are the taxation rules and implications in Mutual Funds?,education,tax|taxation|LTCG|STCG,AMFI investor education
-mf-tenure,https://www.mutualfundssahihai.com/en/what-minimum-and-maximum-tenure-i-can-invest-mutual-funds,What is the minimum and maximum tenure that I can invest in Mutual Funds?,education,tenure|minimum tenure|maximum tenure,AMFI investor education
-mf-early-withdrawal-penalties,https://www.mutualfundssahihai.com/en/are-there-penalties-if-i-choose-withdraw-earlier,Are there penalties if I choose to withdraw earlier?,education,penalty|early withdrawal|exit load,AMFI investor education
-mf-withdrawal-timeline,https://www.mutualfundssahihai.com/en/how-soon-can-i-withdraw-my-money-mutual-funds,How soon can I withdraw my money from Mutual Funds?,education,withdraw|redemption timeline|settlement,AMFI investor education
+id,url,publisher,doc_type,scheme,status,note
+hdfc-large-cap,https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth,Groww,scheme_page,large_cap,active,HDFC Large Cap Fund Direct Growth — Groww scheme page
+hdfc-flexi-cap,https://groww.in/mutual-funds/hdfc-equity-fund-direct-growth,Groww,scheme_page,flexi_cap,active,HDFC Flexi Cap Direct Plan Growth — Groww scheme page
+hdfc-elss,https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth,Groww,scheme_page,elss,active,HDFC ELSS Tax Saver Fund Direct Plan Growth — Groww scheme page
+hdfc-mid-cap,https://groww.in/mutual-funds/hdfc-mid-cap-fund-direct-growth,Groww,scheme_page,mid_cap,active,HDFC Mid Cap Fund Direct Growth — Groww scheme page
+hdfc-amc,https://groww.in/mutual-funds/amc/hdfc-mutual-funds,Groww,amc_page,general,active,HDFC Mutual Fund — Groww AMC page
+mf-expenses,https://www.mutualfundssahihai.com/en/what-are-expenses-incurred-mutual-fund-scheme,AMFI,education,general,active,What are the expenses incurred in a Mutual Fund scheme? — AMFI investor education
+mf-loads,https://www.mutualfundssahihai.com/en/what-are-loads,AMFI,education,general,active,What are loads? — AMFI investor education
+mf-exit-load-advantage,https://www.mutualfundssahihai.com/en/there-advantage-investing-funds-exit-load,AMFI,education,general,active,Is there an advantage in investing in funds with an exit load? — AMFI investor education
+mf-redemption-costs,https://www.mutualfundssahihai.com/en/what-costs-does-one-incur-while-redeeming-mutual-fund-units,AMFI,education,general,active,What costs does one incur while redeeming Mutual Fund units? — AMFI investor education
+mf-elss,https://www.mutualfundssahihai.com/en/elss-fund-tax-saving-mutual-fund,AMFI,education,general,active,ELSS Fund – Tax Saving Mutual Fund — AMFI investor education
+mf-elss-advantages,https://www.mutualfundssahihai.com/en/advantages-of-elss-funds,AMFI,education,general,active,What are the advantages of investing in ELSS Funds? — AMFI investor education
+mf-lock-in,https://www.mutualfundssahihai.com/en/what-is-lock-in-period,AMFI,education,general,active,What is Lock-in Period in Mutual Funds? — AMFI investor education
+mf-riskometer,https://www.mutualfundssahihai.com/en/what-riskometer-and-what-are-different-levels,AMFI,education,general,active,What is a Riskometer and what are the different levels? — AMFI investor education
+mf-riskometer-derived,https://www.mutualfundssahihai.com/en/how-riskometer-scheme-derived,AMFI,education,general,active,How is the Riskometer for a scheme derived? — AMFI investor education
+mf-capital-gain-statement,https://www.mutualfundssahihai.com/en/how-get-capital-gain-statement-mutual-funds,AMFI,education,general,active,How to Get Capital Gain Statement for Mutual Funds? — AMFI investor education
+mf-cas,https://www.mutualfundssahihai.com/en/what-cas-consolidated-account-statement,AMFI,education,general,active,What is CAS? (Consolidated Account Statement) — AMFI investor education
+mf-sip,https://www.mutualfundssahihai.com/en/what-is-sip,AMFI,education,general,active,What is Systematic Investment Plan (SIP)? — AMFI investor education
+mf-taxation,https://www.mutualfundssahihai.com/en/what-are-the-taxation-rules-and-implications-in-mutual-fund,AMFI,education,general,active,What are the taxation rules and implications in Mutual Funds? — AMFI investor education
+mf-tenure,https://www.mutualfundssahihai.com/en/what-minimum-and-maximum-tenure-i-can-invest-mutual-funds,AMFI,education,general,active,What is the minimum and maximum tenure that I can invest in Mutual Funds? — AMFI investor education
+mf-early-withdrawal-penalties,https://www.mutualfundssahihai.com/en/are-there-penalties-if-i-choose-withdraw-earlier,AMFI,education,general,active,Are there penalties if I choose to withdraw earlier? — AMFI investor education
+mf-withdrawal-timeline,https://www.mutualfundssahihai.com/en/how-soon-can-i-withdraw-my-money-mutual-funds,AMFI,education,general,active,How soon can I withdraw my money from Mutual Funds? — AMFI investor education
+hdfc-lc-regular,https://www.hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/regular,HDFC AMC,scheme_page,large_cap,active,HDFC Large Cap Fund Regular — HDFC AMC scheme page (regular plan)
+hdfc-lc-direct,https://hdfcfund.com/explore/mutual-funds/hdfc-large-cap-fund/direct,HDFC AMC,scheme_page,large_cap,active,HDFC Large Cap Fund Direct — HDFC AMC scheme page (direct plan)
+hdfc-lc-overview,https://www.hdfcfund.com/product-solutions/overview/hdfc-large-cap-fund/regular,HDFC AMC,scheme_page,large_cap,active,HDFC Large Cap Fund Overview — HDFC AMC product-solutions overview (regular plan)
+hdfc-flexi-regular,https://www.hdfcfund.com/explore/mutual-funds/hdfc-flexi-cap-fund/regular,HDFC AMC,scheme_page,flexi_cap,active,HDFC Flexi Cap Fund Regular — HDFC AMC scheme page (regular plan)
+hdfc-flexi-direct,https://hdfcfund.com/explore/mutual-funds/hdfc-flexi-cap-fund/direct,HDFC AMC,scheme_page,flexi_cap,active,HDFC Flexi Cap Fund Direct — HDFC AMC scheme page (direct plan)
+hdfc-flexi-overview,https://www.hdfcfund.com/product-solutions/overview/hdfc-flexi-cap-fund/regular,HDFC AMC,scheme_page,flexi_cap,active,HDFC Flexi Cap Fund Overview — HDFC AMC product-solutions overview (regular plan)
+hdfc-flexi-product,https://www.hdfcfund.com/products/equity/flexi-cap-fund,HDFC AMC,scheme_page,flexi_cap,active,HDFC Flexi Cap Fund Product — HDFC AMC equity product page
+hdfc-elss-overview-direct,https://www.hdfcfund.com/product-solutions/overview/hdfc-elss-tax-saver/direct,HDFC AMC,scheme_page,elss,active,HDFC ELSS Tax Saver Direct — HDFC AMC product-solutions overview (direct plan)
+hdfc-elss-explore-direct,https://hdfcfund.com/explore/mutual-funds/hdfc-elss-tax-saver/direct,HDFC AMC,scheme_page,elss,active,HDFC ELSS Tax Saver Direct — HDFC AMC explore page (direct plan)
+hdfc-elss-overview-regular,https://www.hdfcfund.com/product-solutions/overview/hdfc-elss-tax-saver/regular,HDFC AMC,scheme_page,elss,active,HDFC ELSS Tax Saver Regular — HDFC AMC product-solutions overview (regular plan)
+hdfc-elss-presentation,https://files.hdfcfund.com/s3fs-public/Others/2025-10/HDFC%20ELSS%20Tax%20saver%20Presentation%20%28October%202025%29.pdf,HDFC AMC,presentation,elss,active,HDFC ELSS Tax Saver Presentation (October 2025) — HDFC AMC presentation PDF
+hdfc-mid-regular,https://www.hdfcfund.com/explore/mutual-funds/hdfc-mid-cap-fund/regular,HDFC AMC,scheme_page,mid_cap,PATTERN_INFERRED_VERIFY,"HDFC Mid Cap Fund Regular — HDFC AMC scheme page (regular plan); URL pattern inferred, verify"
+hdfc-mid-direct,https://www.hdfcfund.com/explore/mutual-funds/hdfc-mid-cap-fund/direct,HDFC AMC,scheme_page,mid_cap,PATTERN_INFERRED_VERIFY,"HDFC Mid Cap Fund Direct — HDFC AMC scheme page (direct plan); URL pattern inferred, verify"
+hdfc-sid,https://www.hdfcfund.com/mutual-funds/fund-documents/sid,HDFC AMC,sid_index,general,active,Scheme Information Documents — HDFC AMC SID index
+hdfc-account-statement,https://www.hdfcfund.com/account-statement,HDFC AMC,statement_guide,general,active,Account Statement — HDFC AMC statement guide
+hdfc-capital-gain-guide,https://www.hdfcfund.com/learners-corner/beginner/how-get-capital-gain-statement-mutual-fund-schemes-india,HDFC AMC,statement_guide,general,active,How to Get Capital Gain Statement — HDFC AMC beginner guide
+hdfc-distributor-faqs,https://www.hdfcfund.com/distributor-corner/faqs,HDFC AMC,faq,general,active,Distributor FAQs — HDFC AMC distributor FAQ
+sebi-riskometer-circular,https://www.sebi.gov.in/legal/circulars/oct-2020/circular-on-product-labeling-in-mutual-fund-schemes-risk-o-meter_47796.html,SEBI,circular,general,active,SEBI Riskometer Circular (October 2020) — product labelling circular
+sebi-riskometer-circular-pdf,https://www.sebi.gov.in/sebi_data/attachdocs/oct-2020/1602580413614.pdf,SEBI,circular_pdf,general,active,SEBI Riskometer Circular PDF (October 2020) — product labelling circular PDF
+sebi-investor-education,https://investor.sebi.gov.in/,SEBI,investor_education,general,PATTERN_INFERRED_VERIFY,"SEBI Investor Education — investor.sebi.gov.in home; URL pattern inferred, verify"

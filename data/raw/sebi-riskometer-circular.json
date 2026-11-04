@@ -1,0 +1,38 @@
+{
+  "doc_id": "sebi-riskometer-circular",
+  "url": "https://www.sebi.gov.in/legal/circulars/oct-2020/circular-on-product-labeling-in-mutual-fund-schemes-risk-o-meter_47796.html",
+  "title": "SEBI Riskometer Circular (October 2020)",
+  "category": "regulator",
+  "scraped_at": "2026-11-04T09:09:22Z",
+  "http_status": 200,
+  "content_type": "circular",
+  "blocks": [
+    {
+      "kind": "heading",
+      "level": 1,
+      "text": "Circular on Product Labeling in Mutual Fund schemes – Risk-o-meter"
+    },
+    {
+      "kind": "heading",
+      "level": 5,
+      "text": "Oct 05, 2020"
+    },
+    {
+      "kind": "paragraph",
+      "text": "|"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Circular No.: SEBI/HO/IMD/DF3/CIR/P/2020/197"
+    }
+  ],
+  "text": "Circular on Product Labeling in Mutual Fund schemes – Risk-o-meter\nOct 05, 2020\n|\nCircular No.: SEBI/HO/IMD/DF3/CIR/P/2020/197",
+  "content_hash": "sha256:0f34fee2363c9fcdec89160cb825c03b8098ab43fb5b7569275e6a305cd53317",
+  "aliases": [],
+  "notes": "SEBI Riskometer Circular (October 2020) — product labelling circular",
+  "page_title": "SEBI | Circular on Product Labeling in Mutual Fund schemes – Risk-o-meter",
+  "publisher": "SEBI",
+  "doc_type": "circular",
+  "scheme": "general",
+  "status": "active"
+}

@@ -3,9 +3,9 @@
   "url": "https://www.mutualfundssahihai.com/en/are-there-penalties-if-i-choose-withdraw-earlier",
   "title": "Are there penalties if I choose to withdraw earlier?",
   "category": "education",
-  "scraped_at": "2026-11-02T07:03:23Z",
+  "scraped_at": "2026-11-04T09:09:15Z",
   "http_status": 200,
-  "content_type": "education_page",
+  "content_type": "education",
   "blocks": [
     {
       "kind": "heading",
@@ -39,11 +39,11 @@
   ],
   "text": "Are there penalties if I choose to withdraw earlier?\nNew to Mutual Funds\nWithdrawing from Mutual Funds\n34 seconds read\nEvery open ended scheme offers liquidity with almost complete freedom, i.e. no restriction on time or amount of redemption. However, a few schemes may specify an Exit Load.\nFor example, a scheme specifies an exit load of 1%, if redeemed within 1 year. What it means is that, if an investor has invested on April 1, 2016, any redemption done on or before March 31, 2017 would attract a penalty of 1% on the NAV . If an investor redeems on February 1, 2017 with the NAV at ₹ 200, then ₹ 2 would be deducted and only ₹ 198 per unit would be returned to investor.\nAll information on exit loads are usually mentioned in relevant scheme related documents. For instance, a fund fact sheet or key information memorandum would contain such information.",
   "content_hash": "sha256:5589633426aa62d8afb75edb49191073e639a0ac0299b997cdc09762381bf5a6",
-  "aliases": [
-    "penalty",
-    "early withdrawal",
-    "exit load"
-  ],
-  "notes": "AMFI investor education",
-  "page_title": "Is There a Penalty if I Opt to Withdraw Early? | Mutual Funds Sahi Hai"
+  "aliases": [],
+  "notes": "Are there penalties if I choose to withdraw earlier? — AMFI investor education",
+  "page_title": "Is There a Penalty if I Opt to Withdraw Early? | Mutual Funds Sahi Hai",
+  "publisher": "AMFI",
+  "doc_type": "education",
+  "scheme": "general",
+  "status": "active"
 }

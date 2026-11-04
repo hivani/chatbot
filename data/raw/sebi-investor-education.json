@@ -1,0 +1,143 @@
+{
+  "doc_id": "sebi-investor-education",
+  "url": "https://investor.sebi.gov.in/",
+  "title": "SEBI Investor Education",
+  "category": "education",
+  "scraped_at": "2026-11-04T09:09:23Z",
+  "http_status": 200,
+  "content_type": "investor_education",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "text": "Apply to join as Securities Market Trainers(SMARTS) | ⚠️ Toll - Free Helpline Service For Investors: 1800 266 7575 or 1800 22 7575"
+    },
+    {
+      "kind": "heading",
+      "level": 1,
+      "text": "Learn To Manage Your Money For Financial Well-Being"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "Money Matters : Lets Understand"
+    },
+    {
+      "kind": "paragraph",
+      "text": "This Section Will Provide You Understanding About Money Related Matters"
+    },
+    {
+      "kind": "paragraph",
+      "text": "To Know More"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "Investment : Avenue To Grow Your Money"
+    },
+    {
+      "kind": "paragraph",
+      "text": "This section will provide you an essential guide on investments and asset class"
+    },
+    {
+      "kind": "paragraph",
+      "text": "TO KNOW MORE"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "Securities Market Investment : Lets Learn"
+    },
+    {
+      "kind": "paragraph",
+      "text": "This section helps you to know about investment avenues available in securities market"
+    },
+    {
+      "kind": "paragraph",
+      "text": "TO KNOW MORE"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "Vigilance Awareness Week 2026"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Explore Now"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "Samajh Se Investing Simple"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Understand before you invest. Choose regulated investment products. Start early, stay invested. Beware of investment frauds."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Explore Now"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "How jagrook are you?"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Take the SEBI Investor Awareness Test (SIAT) to find your readiness level and get a learning path built for it."
+    },
+    {
+      "kind": "paragraph",
+      "text": "START SIAT NOW"
+    },
+    {
+      "kind": "heading",
+      "level": 2,
+      "text": "Topics of Interest"
+    },
+    {
+      "kind": "list",
+      "items": [
+        "Advisory - SME segment",
+        "Secure Your Investment Account",
+        "Podcasts",
+        "Nomination",
+        "SMS and Email Alerts to Investors",
+        "Apply in IPO through ASBA",
+        "Due Diligence",
+        "Consolidated Account Statement",
+        "Market Index – Sensex & Nifty",
+        "Bull and Bear Market",
+        "SMART Investor",
+        "Dabba Trading",
+        "Caution to Investor",
+        "Beware of Fake Trading App Scam",
+        "\"Stock Market Guru\" Scams",
+        "Pump and Dump Scam"
+      ]
+    },
+    {
+      "kind": "list",
+      "items": [
+        "Awareness Messages",
+        "Video Based Learning",
+        "Investor Charter",
+        "Awareness Programs",
+        "Investor Support",
+        "Request for Awareness Program",
+        "Video Gallery",
+        "Events",
+        "Partner with SEBI"
+      ]
+    }
+  ],
+  "text": "Apply to join as Securities Market Trainers(SMARTS) | ⚠️ Toll - Free Helpline Service For Investors: 1800 266 7575 or 1800 22 7575\nLearn To Manage Your Money For Financial Well-Being\nMoney Matters : Lets Understand\nThis Section Will Provide You Understanding About Money Related Matters\nTo Know More\nInvestment : Avenue To Grow Your Money\nThis section will provide you an essential guide on investments and asset class\nTO KNOW MORE\nSecurities Market Investment : Lets Learn\nThis section helps you to know about investment avenues available in securities market\nTO KNOW MORE\nVigilance Awareness Week 2026\nExplore Now\nSamajh Se Investing Simple\nUnderstand before you invest. Choose regulated investment products. Start early, stay invested. Beware of investment frauds.\nExplore Now\nHow jagrook are you?\nTake the SEBI Investor Awareness Test (SIAT) to find your readiness level and get a learning path built for it.\nSTART SIAT NOW\nTopics of Interest\nAdvisory - SME segment\nSecure Your Investment Account\nPodcasts\nNomination\nSMS and Email Alerts to Investors\nApply in IPO through ASBA\nDue Diligence\nConsolidated Account Statement\nMarket Index – Sensex & Nifty\nBull and Bear Market\nSMART Investor\nDabba Trading\nCaution to Investor\nBeware of Fake Trading App Scam\n\"Stock Market Guru\" Scams\nPump and Dump Scam\nAwareness Messages\nVideo Based Learning\nInvestor Charter\nAwareness Programs\nInvestor Support\nRequest for Awareness Program\nVideo Gallery\nEvents\nPartner with SEBI",
+  "content_hash": "sha256:213fe959ab5f199ebf44384e795086200e32095a8a2df7f3bdefca031f1c6128",
+  "aliases": [],
+  "notes": "SEBI Investor Education — investor.sebi.gov.in home; URL pattern inferred, verify",
+  "page_title": ":: Home | SEBI Investor",
+  "publisher": "SEBI",
+  "doc_type": "investor_education",
+  "scheme": "general",
+  "status": "PATTERN_INFERRED_VERIFY"
+}

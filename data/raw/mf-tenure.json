@@ -3,9 +3,9 @@
   "url": "https://www.mutualfundssahihai.com/en/what-minimum-and-maximum-tenure-i-can-invest-mutual-funds",
   "title": "What is the minimum and maximum tenure that I can invest in Mutual Funds?",
   "category": "education",
-  "scraped_at": "2026-11-02T07:03:23Z",
+  "scraped_at": "2026-11-04T09:09:14Z",
   "http_status": 200,
-  "content_type": "education_page",
+  "content_type": "education",
   "blocks": [
     {
       "kind": "heading",
@@ -35,11 +35,11 @@
   ],
   "text": "What is the minimum and maximum tenure that I can invest in Mutual Funds?\nNew to Mutual Funds\nBenefits and Risks\n34 seconds read\nThe minimum tenure for investment in Mutual Funds is a day and the maximum tenure is ‘perpetual’.\nIt may be easy to understand the minimum period of a day, i.e. getting units allotted at a particular NAV and then redeemed at the next day’s NAV. However, what is the ‘perpetual’ nature of the maximum tenure? There are open end schemes in India with daily NAV, in existence for more than 20 years. And there are investors too who have stayed invested for that tenure! As long as the schemes continue in operation and offer a NAV based sale and purchase price, investors can choose to continue to stay invested. An open end fund may continue in existence until the fund house decides to terminate it, after obtaining due approval of the trustees.",
   "content_hash": "sha256:ad4296972fe28de1b1b8ba5bd5def15fc727b5d2ed799f6ce69b8c6f097fb5ca",
-  "aliases": [
-    "tenure",
-    "minimum tenure",
-    "maximum tenure"
-  ],
-  "notes": "AMFI investor education",
-  "page_title": "What is the minimum and maximum tenure to invest in Mutual Funds?"
+  "aliases": [],
+  "notes": "What is the minimum and maximum tenure that I can invest in Mutual Funds? — AMFI investor education",
+  "page_title": "What is the minimum and maximum tenure to invest in Mutual Funds?",
+  "publisher": "AMFI",
+  "doc_type": "education",
+  "scheme": "general",
+  "status": "active"
 }

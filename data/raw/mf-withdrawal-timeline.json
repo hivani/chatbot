@@ -3,9 +3,9 @@
   "url": "https://www.mutualfundssahihai.com/en/how-soon-can-i-withdraw-my-money-mutual-funds",
   "title": "How soon can I withdraw my money from Mutual Funds?",
   "category": "education",
-  "scraped_at": "2026-11-02T07:03:24Z",
+  "scraped_at": "2026-11-04T09:09:15Z",
   "http_status": 200,
-  "content_type": "education_page",
+  "content_type": "education",
   "blocks": [
     {
       "kind": "heading",
@@ -39,11 +39,11 @@
   ],
   "text": "How soon can I withdraw my money from Mutual Funds?\nNew to Mutual Funds\nWithdrawing from Mutual Funds\n48 seconds read\nMutual Funds are one of the most liquid assets, i.e. it is one of the easiest to convert into cash. In order to redeem funds through offline mode, the unit holder needs to submit a signed Redemption Request form to the AMC's or the Registrar’s designated office. The form requires details like unit holder’s name, folio number, scheme name, and number of units to redeem. The proceeds from the redemption will be credited to the registered bank account of the first named unit holder.\nMutual Funds can also be purchased and redeemed on the concerned fund’s website. You simply have to log-on to the ‘Online Transaction’ page of the desired Mutual Fund and log-in using your Folio Number and/or the PAN, select the Mutual Fund Scheme and the number of units (or the amount) you wish to redeem and confirm your transaction.\nIn addition, registrars like CAMS (Computer Age Management Services Pvt. Ltd.), Karvy, etc. offer the option of redeeming Mutual Fund bought from several AMCs. You can download the form online or visit the nearest office. Please note that these agencies might not service all the AMCs.",
   "content_hash": "sha256:1ce47757f507f66a1afd0d02ec8e910b72f25a26d85dfd813742170a497f6211",
-  "aliases": [
-    "withdraw",
-    "redemption timeline",
-    "settlement"
-  ],
-  "notes": "AMFI investor education",
-  "page_title": "Know how soon can you withdraw your money from Mutual Funds?"
+  "aliases": [],
+  "notes": "How soon can I withdraw my money from Mutual Funds? — AMFI investor education",
+  "page_title": "Know how soon can you withdraw your money from Mutual Funds?",
+  "publisher": "AMFI",
+  "doc_type": "education",
+  "scheme": "general",
+  "status": "active"
 }
